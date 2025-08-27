@@ -870,13 +870,13 @@ const SpotifyLandingPage = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-[#121212]/80 to-black/90"></div>
 
         {/* Top notification badges with mobile-responsive positioning */}
-        <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-20 w-full max-w-2xl px-4">
-          <div className="flex flex-col sm:flex-row justify-center sm:justify-between items-center gap-4">
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5 text-white text-xs sm:text-sm">
+        <div className="absolute top-4 sm:top-6 left-1/2 transform -translate-x-1/2 z-20 w-full max-w-2xl px-4">
+          <div className="flex flex-col sm:flex-row justify-center sm:justify-between items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1 sm:py-1.5 text-white text-xs sm:text-sm">
               <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
               <span className="whitespace-nowrap">🔥 1000+ Jingle Sudah Dibuat</span>
             </div>
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5 text-white text-xs sm:text-sm">
+            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1 sm:py-1.5 text-white text-xs sm:text-sm">
               <span className="whitespace-nowrap">⭐ Rating 4.9/5</span>
             </div>
           </div>
@@ -909,14 +909,14 @@ const SpotifyLandingPage = () => {
           ))}
         </div>
 
-        <div className="relative z-10 text-center px-4 max-w-5xl mx-auto mt-4 sm:mt-6 md:mt-8">
+        <div className="relative z-10 text-center px-4 max-w-5xl mx-auto mt-28 sm:mt-20 md:mt-12">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             className="mb-10"
           >
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-6 text-white leading-relaxed px-2">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-6 text-white leading-tight px-2">
               <span className="block sm:inline">👉 Biar Usaha Kamu Makin Dikenal,</span>
               <br className="hidden sm:block" />
               <span className="text-green-400 block mt-3 sm:mt-0 sm:inline">Bikin Jingle yang Nempel di Kepala!</span>
@@ -1487,7 +1487,7 @@ Tapi bukan cuma seru — jingle bikin usaha kamu lebih gampang diingat, lebih di
               onClick={() => setIsFormOpen(true)}
               className="bg-green-500 hover:bg-green-600 text-white px-8 py-4 text-lg font-semibold rounded-full shadow-2xl hover:shadow-green-500/25 transition-all duration-300"
             >
-              🎵 Pesan Jingle Seperti Ini Sekarang
+              🎵 Pesan Jingle Sekarang
             </Button>
           </motion.div>
         </div>
@@ -1524,25 +1524,25 @@ Tapi bukan cuma seru — jingle bikin usaha kamu lebih gampang diingat, lebih di
             viewport={{ once: true }}
             className="relative"
           >
-            <Card className="bg-[#121212] border-[#282828] p-8 relative overflow-hidden">
-              <div className="absolute top-4 right-4">
-                <Badge className="bg-red-500 text-white font-bold px-3 py-1 text-sm">🔥 HOT DEAL</Badge>
+            <Card className="bg-[#121212] border-[#282828] p-4 sm:p-8 relative overflow-hidden">
+              <div className="absolute top-2 right-2 sm:top-4 sm:right-4">
+                <Badge className="bg-red-500 text-white font-bold px-2 py-1 sm:px-3 sm:py-1 text-xs sm:text-sm">🔥 HOT DEAL</Badge>
               </div>
 
-              <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold text-green-400 mb-2">🟢 PAKET PROMO – 10 Pembeli Pertama</h3>
-                <div className="flex items-center justify-center gap-4 mb-4">
-                  <span className="text-2xl text-gray-500 line-through">Rp450K</span>
-                  <span className="text-4xl font-bold text-green-400">Rp199K</span>
+              <div className="text-center mb-6 sm:mb-8 mt-8 sm:mt-0">
+                <h3 className="text-lg sm:text-2xl font-bold text-green-400 mb-2">🟢 PAKET PROMO – 10 Pembeli Pertama</h3>
+                <div className="flex items-center justify-center gap-2 sm:gap-4 mb-4">
+                  <span className="text-lg sm:text-2xl text-gray-500 line-through">Rp450K</span>
+                  <span className="text-2xl sm:text-4xl font-bold text-green-400">Rp199K</span>
                 </div>
               </div>
 
-              <div className="space-y-3 mb-8">
+              <div className="space-y-3 mb-6 sm:mb-8">
                 {["2 Lagu Original", "Free Lirik", "Minor Revisi*", "Hak Pakai Komersial", "1 Hari Selesai"].map(
                   (feature, index) => (
                     <div key={index} className="flex items-center gap-3">
-                      <Check className="w-5 h-5 text-green-400" />
-                      <span className="text-white">{feature}</span>
+                      <Check className="w-4 h-4 sm:w-5 sm:h-5 text-green-400 flex-shrink-0" />
+                      <span className="text-white text-sm sm:text-base">{feature}</span>
                     </div>
                   ),
                 )}
@@ -1551,17 +1551,17 @@ Tapi bukan cuma seru — jingle bikin usaha kamu lebih gampang diingat, lebih di
               <Button
                 size="lg"
                 onClick={() => setIsFormOpen(true)}
-                className="w-full bg-green-500 hover:bg-green-600 text-white py-4 text-lg font-semibold rounded-full"
+                className="w-full bg-green-500 hover:bg-green-600 text-white py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-full"
               >
                 🔥 Ambil Promo Sekarang
               </Button>
 
-              <p className="text-sm text-gray-400 text-center mt-4">
+              <p className="text-xs sm:text-sm text-gray-400 text-center mt-4">
                 Promo terbatas hanya untuk 10 orang pertama. Jangan kelewatan!
               </p>
 
               <div className="mt-4">
-                <div className="flex justify-between text-sm text-gray-400 mb-2">
+                <div className="flex justify-between text-xs sm:text-sm text-gray-400 mb-2">
                   <span>Tersisa 7 dari 10 slot</span>
                   <span>70%</span>
                 </div>
@@ -1599,7 +1599,7 @@ Tapi bukan cuma seru — jingle bikin usaha kamu lebih gampang diingat, lebih di
               {[
                 {
                   question: "Berapa lama prosesnya?",
-                  answer: "2–4 hari kerja. Kami bekerja cepat tanpa mengurangi kualitas.",
+                  answer: "1 hari kerja. Kami bekerja cepat tanpa mengurangi kualitas.",
                 },
                 {
                   question: "Bisa request genre?",
@@ -1655,7 +1655,7 @@ Tapi bukan cuma seru — jingle bikin usaha kamu lebih gampang diingat, lebih di
               onClick={() => setIsFormOpen(true)}
               className="bg-green-500 hover:bg-green-600 text-white px-8 py-4 text-lg font-semibold rounded-full shadow-2xl hover:shadow-green-500/25 transition-all duration-300"
             >
-              🚀 Pesan Sekarang – Mulai Rp199K
+              🚀 Miliki Jingle Sekarang
             </Button>
 
             <div className="mt-12">
