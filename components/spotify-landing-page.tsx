@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, createContext, useContext } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   Play,
@@ -35,6 +35,57 @@ declare global {
   interface Window {
     fbq: any
   }
+}
+
+// Global Audio Player Context
+interface AudioContextType {
+  currentlyPlaying: string | null
+  isPlaying: boolean
+  progress: number
+  duration: number
+  currentTime: number
+  setCurrentlyPlaying: (src: string | null) => void
+  setIsPlaying: (playing: boolean) => void
+  setProgress: (progress: number) => void
+  setDuration: (duration: number) => void
+  setCurrentTime: (time: number) => void
+}
+
+const AudioContext = createContext<AudioContextType | null>(null)
+
+function AudioProvider({ children }: { children: React.ReactNode }) {
+  const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const [currentTime, setCurrentTime] = useState(0)
+
+  return (
+    <AudioContext.Provider
+      value={{
+        currentlyPlaying,
+        isPlaying,
+        progress,
+        duration,
+        currentTime,
+        setCurrentlyPlaying,
+        setIsPlaying,
+        setProgress,
+        setDuration,
+        setCurrentTime,
+      }}
+    >
+      {children}
+    </AudioContext.Provider>
+  )
+}
+
+function useAudioContext() {
+  const context = useContext(AudioContext)
+  if (!context) {
+    throw new Error('useAudioContext must be used within an AudioProvider')
+  }
+  return context
 }
 
 const initFacebookPixel = () => {
@@ -504,26 +555,51 @@ const AudioPlayerCompact = ({
   title?: string
 }) => {
   const audioRef = useRef<HTMLAudioElement>(null)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [progress, setProgress] = useState(0)
-  const [duration, setDuration] = useState(0)
+  const audioContext = useAudioContext()
+  const isCurrentlyPlaying = audioContext.currentlyPlaying === src
+  const isPlaying = isCurrentlyPlaying && audioContext.isPlaying
 
   const togglePlay = () => {
     if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause()
+      if (isCurrentlyPlaying) {
+        // If this is the currently playing track
+        if (isPlaying) {
+          audioRef.current.pause()
+          audioContext.setIsPlaying(false)
+        } else {
+          audioRef.current.play()
+          audioContext.setIsPlaying(true)
+        }
       } else {
-        audioRef.current.play()
+        // If this is a different track, switch to it
+        // First pause any currently playing audio
+        if (audioContext.currentlyPlaying) {
+          audioContext.setIsPlaying(false)
+        }
+        
+        // Then set this as the new current track
+        audioContext.setCurrentlyPlaying(src)
+        audioContext.setProgress(0)
+        audioContext.setCurrentTime(0)
+        audioRef.current.currentTime = 0
+        
+        // Start playing after a small delay to ensure state is updated
+        setTimeout(() => {
+          if (audioRef.current) {
+            audioRef.current.play()
+            audioContext.setIsPlaying(true)
+          }
+        }, 100)
       }
-      setIsPlaying(!isPlaying)
     }
   }
 
   const handleTimeUpdate = () => {
-    if (audioRef.current) {
+    if (audioRef.current && isCurrentlyPlaying) {
       const progress = (audioRef.current.currentTime / audioRef.current.duration) * 100
-      setProgress(isFinite(progress) ? progress : 0)
-      setDuration(audioRef.current.duration)
+      audioContext.setProgress(isFinite(progress) ? progress : 0)
+      audioContext.setDuration(audioRef.current.duration)
+      audioContext.setCurrentTime(audioRef.current.currentTime)
     }
   }
 
@@ -534,30 +610,150 @@ const AudioPlayerCompact = ({
     return `${minutes}:${seconds.toString().padStart(2, "0")}`
   }
 
+  // Pause other players when a new one starts
+  useEffect(() => {
+    if (audioRef.current) {
+      const audioElement = audioRef.current
+      
+      // Add event listeners for better control
+      const handlePlay = () => {
+        if (audioContext.currentlyPlaying !== src) {
+          audioElement.pause()
+        }
+      }
+      
+      const handlePause = () => {
+        if (isCurrentlyPlaying) {
+          audioContext.setIsPlaying(false)
+        }
+      }
+      
+      const handleEnded = () => {
+        if (isCurrentlyPlaying) {
+          audioContext.setIsPlaying(false)
+          audioContext.setCurrentlyPlaying(null)
+          audioContext.setProgress(0)
+          audioContext.setCurrentTime(0)
+        }
+      }
+      
+      audioElement.addEventListener('play', handlePlay)
+      audioElement.addEventListener('pause', handlePause) 
+      audioElement.addEventListener('ended', handleEnded)
+      
+      // Control playback based on global state
+      if (isCurrentlyPlaying && audioContext.isPlaying) {
+        audioElement.play().catch(console.error)
+      } else {
+        audioElement.pause()
+      }
+      
+      return () => {
+        audioElement.removeEventListener('play', handlePlay)
+        audioElement.removeEventListener('pause', handlePause)
+        audioElement.removeEventListener('ended', handleEnded)
+      }
+    }
+  }, [audioContext.currentlyPlaying, audioContext.isPlaying, isCurrentlyPlaying, src])
+
   return (
-    <div className="bg-[#282828] rounded-lg p-3 space-y-2">
+    <motion.div
+      className="relative flex flex-col mx-auto rounded-3xl overflow-hidden bg-[#121212] backdrop-blur-sm shadow-2xl p-4 w-[320px] h-auto border border-green-500/20"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ 
+        opacity: 1, 
+        y: 0,
+        scale: isCurrentlyPlaying ? 1.12 : 1,
+        boxShadow: isCurrentlyPlaying 
+          ? "0 0 35px rgba(34, 197, 94, 0.6)"
+          : "0 0 0px rgba(34, 197, 94, 0)"
+      }}
+      transition={{ duration: 0.5 }}
+    >
+      {/* Animated background glow for currently playing */}
+      {isCurrentlyPlaying && (
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-r from-green-500/10 via-green-400/5 to-green-500/10 rounded-lg"
+          animate={{
+            opacity: [0.3, 0.6, 0.3],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Number.POSITIVE_INFINITY,
+            ease: "easeInOut"
+          }}
+        />
+      )}
+      
       <audio ref={audioRef} onTimeUpdate={handleTimeUpdate} src={src} className="hidden" />
       
       {/* Progress Bar */}
-      <div className="w-full bg-[#404040] rounded-full h-1">
-        <div 
-          className="bg-green-500 h-1 rounded-full transition-all duration-100"
-          style={{ width: `${progress}%` }}
+      <div className="w-full bg-[#404040] rounded-full h-1 relative z-10">
+        <motion.div 
+          className="bg-green-500 h-1 rounded-full"
+          style={{ width: `${isCurrentlyPlaying ? audioContext.progress : 0}%` }}
+          animate={{
+            boxShadow: isCurrentlyPlaying && isPlaying 
+              ? "0 0 8px rgba(34, 197, 94, 0.8)"
+              : "0 0 0px rgba(34, 197, 94, 0)"
+          }}
+          transition={{ duration: 0.1 }}
         />
       </div>
       
       {/* Controls */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between relative z-10">
         <div className="flex items-center gap-2">
-          <Button
-            onClick={togglePlay}
-            variant="ghost"
-            size="icon"
-            className="text-white hover:bg-green-600 h-8 w-8 rounded-full bg-green-500"
+          <motion.div
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
           >
-            {isPlaying ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
-          </Button>
-          <span className="text-gray-400 text-xs">{formatTime(duration)}</span>
+            <Button
+              onClick={togglePlay}
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-green-600 h-8 w-8 rounded-full bg-green-500 relative"
+            >
+              {isPlaying ? (
+                <motion.div
+                  key="pause"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Pause className="h-3 w-3" />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="play"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Play className="h-3 w-3" />
+                </motion.div>
+              )}
+              
+              {/* Animated ring for currently playing */}
+              {isCurrentlyPlaying && isPlaying && (
+                <motion.div
+                  className="absolute inset-0 border-2 border-green-400 rounded-full"
+                  animate={{
+                    scale: [1, 1.3, 1],
+                    opacity: [0.8, 0, 0.8],
+                  }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Number.POSITIVE_INFINITY,
+                    ease: "easeInOut"
+                  }}
+                />
+              )}
+            </Button>
+          </motion.div>
+          <span className="text-gray-400 text-xs">
+            {isCurrentlyPlaying ? formatTime(audioContext.duration) : "0:00"}
+          </span>
         </div>
         <Button
           variant="ghost"
@@ -567,7 +763,27 @@ const AudioPlayerCompact = ({
           <Volume2 className="h-3 w-3" />
         </Button>
       </div>
-    </div>
+      
+      {/* Currently playing indicator */}
+      {isCurrentlyPlaying && (
+        <motion.div
+          className="absolute top-1 right-1 z-20"
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <div className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+            <motion.div
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY }}
+            >
+              <Music className="h-3 w-3" />
+            </motion.div>
+            Playing
+          </div>
+        </motion.div>
+      )}
+    </motion.div>
   )
 }
 
@@ -581,65 +797,175 @@ const AudioPlayer = ({
   title?: string
 }) => {
   const audioRef = useRef<HTMLAudioElement>(null)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [progress, setProgress] = useState(0)
-  const [currentTime, setCurrentTime] = useState(0)
-  const [duration, setDuration] = useState(0)
+  const audioContext = useAudioContext()
+  const isCurrentlyPlaying = audioContext.currentlyPlaying === src
+  const isPlaying = isCurrentlyPlaying && audioContext.isPlaying
 
   const togglePlay = () => {
     if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause()
+      if (isCurrentlyPlaying) {
+        // If this is the currently playing track
+        if (isPlaying) {
+          audioRef.current.pause()
+          audioContext.setIsPlaying(false)
+        } else {
+          audioRef.current.play()
+          audioContext.setIsPlaying(true)
+        }
       } else {
-        audioRef.current.play()
+        // If this is a different track, switch to it
+        // First pause any currently playing audio
+        if (audioContext.currentlyPlaying) {
+          audioContext.setIsPlaying(false)
+        }
+        
+        // Then set this as the new current track
+        audioContext.setCurrentlyPlaying(src)
+        audioContext.setProgress(0)
+        audioContext.setCurrentTime(0)
+        audioRef.current.currentTime = 0
+        
+        // Start playing after a small delay to ensure state is updated
+        setTimeout(() => {
+          if (audioRef.current) {
+            audioRef.current.play()
+            audioContext.setIsPlaying(true)
+          }
+        }, 100)
       }
-      setIsPlaying(!isPlaying)
     }
   }
 
   const handleTimeUpdate = () => {
-    if (audioRef.current) {
+    if (audioRef.current && isCurrentlyPlaying) {
       const progress = (audioRef.current.currentTime / audioRef.current.duration) * 100
-      setProgress(isFinite(progress) ? progress : 0)
-      setCurrentTime(audioRef.current.currentTime)
-      setDuration(audioRef.current.duration)
+      audioContext.setProgress(isFinite(progress) ? progress : 0)
+      audioContext.setCurrentTime(audioRef.current.currentTime)
+      audioContext.setDuration(audioRef.current.duration)
     }
   }
 
   const handleSeek = (value: number) => {
-    if (audioRef.current && audioRef.current.duration) {
+    if (audioRef.current && audioRef.current.duration && isCurrentlyPlaying) {
       const time = (value / 100) * audioRef.current.duration
       if (isFinite(time)) {
         audioRef.current.currentTime = time
-        setProgress(value)
+        audioContext.setProgress(value)
       }
     }
   }
+
+  const formatTime = (time: number) => {
+    if (!isFinite(time)) return "0:00"
+    const minutes = Math.floor(time / 60)
+    const seconds = Math.floor(time % 60)
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`
+  }
+
+  // Pause other players when a new one starts
+  useEffect(() => {
+    if (audioRef.current) {
+      if (isCurrentlyPlaying && audioContext.isPlaying) {
+        audioRef.current.play()
+      } else {
+        audioRef.current.pause()
+      }
+    }
+  }, [audioContext.currentlyPlaying, audioContext.isPlaying, isCurrentlyPlaying])
 
   return (
     <motion.div
       className="relative flex flex-col mx-auto rounded-3xl overflow-hidden bg-[#121212] backdrop-blur-sm shadow-2xl p-4 w-[320px] h-auto border border-green-500/20"
       initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+      animate={{ 
+        opacity: 1, 
+        y: 0,
+        scale: isCurrentlyPlaying ? 1.12 : 1,
+        boxShadow: isCurrentlyPlaying 
+          ? "0 0 35px rgba(34, 197, 94, 0.6)"
+          : "0 0 0px rgba(34, 197, 94, 0)"
+      }}
       transition={{ duration: 0.5 }}
     >
+      {/* Animated background glow for currently playing */}
+      {isCurrentlyPlaying && (
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-br from-green-500/20 via-green-400/10 to-green-500/20 rounded-3xl"
+          animate={{
+            opacity: [0.3, 0.6, 0.3],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Number.POSITIVE_INFINITY,
+            ease: "easeInOut"
+          }}
+        />
+      )}
+      
       <audio ref={audioRef} onTimeUpdate={handleTimeUpdate} src={src} className="hidden" />
 
       {cover && (
         <div className="bg-gradient-to-br from-green-400/20 to-green-600/20 overflow-hidden rounded-2xl h-[200px] w-full relative mb-4">
           <img src={cover || "/placeholder.svg"} alt="cover" className="object-cover w-full h-full" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+          
+          {/* Currently playing overlay */}
+          {isCurrentlyPlaying && (
+            <motion.div
+              className="absolute inset-0 bg-green-500/20 flex items-center justify-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+            >
+              <motion.div
+                className="bg-black/50 backdrop-blur-sm rounded-full p-3"
+                animate={{
+                  scale: [1, 1.1, 1],
+                }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Number.POSITIVE_INFINITY,
+                  ease: "easeInOut"
+                }}
+              >
+                <Music className="h-6 w-6 text-green-400" />
+              </motion.div>
+            </motion.div>
+          )}
         </div>
       )}
 
-      <div className="flex flex-col w-full gap-y-3">
-        {title && <h3 className="text-white font-bold text-lg text-center">{title}</h3>}
+      <div className="flex flex-col w-full gap-y-3 relative z-10">
+        {title && (
+          <div className="flex items-center justify-between">
+            <h3 className="text-white font-bold text-lg text-center flex-1">{title}</h3>
+            {isCurrentlyPlaying && (
+              <motion.div
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Badge className="bg-green-500/20 text-green-400 border-green-500/30 ml-2">
+                  Playing
+                </Badge>
+              </motion.div>
+            )}
+          </div>
+        )}
 
         <div className="flex flex-col gap-y-2">
-          <CustomSlider value={progress} onChange={handleSeek} className="w-full" />
+          <CustomSlider 
+            value={isCurrentlyPlaying ? audioContext.progress : 0} 
+            onChange={handleSeek} 
+            className="w-full" 
+          />
           <div className="flex items-center justify-between">
-            <span className="text-white/70 text-sm">{formatTime(currentTime)}</span>
-            <span className="text-white/70 text-sm">{formatTime(duration)}</span>
+            <span className="text-white/70 text-sm">
+              {isCurrentlyPlaying ? formatTime(audioContext.currentTime) : "0:00"}
+            </span>
+            <span className="text-white/70 text-sm">
+              {isCurrentlyPlaying ? formatTime(audioContext.duration) : "0:00"}
+            </span>
           </div>
         </div>
 
@@ -651,14 +977,53 @@ const AudioPlayer = ({
             <Button variant="ghost" size="icon" className="text-white hover:bg-[#404040] h-8 w-8 rounded-full">
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <Button
-              onClick={togglePlay}
-              variant="ghost"
-              size="icon"
-              className="text-white hover:bg-green-600 h-10 w-10 rounded-full bg-green-500 border border-green-500"
+            <motion.div
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
             >
-              {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-            </Button>
+              <Button
+                onClick={togglePlay}
+                variant="ghost"
+                size="icon"
+                className="text-white hover:bg-green-600 h-10 w-10 rounded-full bg-green-500 border border-green-500 relative"
+              >
+                {isPlaying ? (
+                  <motion.div
+                    key="pause"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Pause className="h-5 w-5" />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="play"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Play className="h-5 w-5" />
+                  </motion.div>
+                )}
+                
+                {/* Animated ring for currently playing */}
+                {isCurrentlyPlaying && isPlaying && (
+                  <motion.div
+                    className="absolute inset-0 border-2 border-green-400 rounded-full"
+                    animate={{
+                      scale: [1, 1.4, 1],
+                      opacity: [0.8, 0, 0.8],
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Number.POSITIVE_INFINITY,
+                      ease: "easeInOut"
+                    }}
+                  />
+                )}
+              </Button>
+            </motion.div>
             <Button variant="ghost" size="icon" className="text-white hover:bg-[#404040] h-8 w-8 rounded-full">
               <ArrowRight className="h-4 w-4" />
             </Button>
@@ -770,7 +1135,7 @@ const FloatingNotes = () => {
   )
 }
 
-const SpotifyLandingPage = () => {
+const SpotifyLandingPageInner = () => {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [jingleSamples, setJingleSamples] = useState<any[]>([])
   const [currentPage, setCurrentPage] = useState(0)
@@ -1713,4 +2078,13 @@ Tapi bukan cuma seru — jingle bikin usaha kamu lebih gampang diingat, lebih di
   )
 }
 
-export default SpotifyLandingPage
+// Wrap the main component with AudioProvider
+function WrappedSpotifyLandingPage() {
+  return (
+    <AudioProvider>
+      <SpotifyLandingPageInner />
+    </AudioProvider>
+  )
+}
+
+export default WrappedSpotifyLandingPage
