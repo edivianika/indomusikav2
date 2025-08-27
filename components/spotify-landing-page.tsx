@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect, createContext, useContext } from "react"
+import { useState, useRef, useEffect, createContext, useContext, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   Play,
@@ -37,15 +37,19 @@ declare global {
   }
 }
 
-// Global Audio Player Context
+// Global Audio Player Context - Redesigned for better control
 interface AudioContextType {
   currentlyPlaying: string | null
   isPlaying: boolean
   progress: number
   duration: number
   currentTime: number
-  setCurrentlyPlaying: (src: string | null) => void
-  setIsPlaying: (playing: boolean) => void
+  audioElements: Map<string, HTMLAudioElement>
+  registerAudio: (src: string, element: HTMLAudioElement) => void
+  unregisterAudio: (src: string) => void
+  playAudio: (src: string) => void
+  pauseAudio: (src: string) => void
+  pauseAllAudio: () => void
   setProgress: (progress: number) => void
   setDuration: (duration: number) => void
   setCurrentTime: (time: number) => void
@@ -59,6 +63,49 @@ function AudioProvider({ children }: { children: React.ReactNode }) {
   const [progress, setProgress] = useState(0)
   const [duration, setDuration] = useState(0)
   const [currentTime, setCurrentTime] = useState(0)
+  const [audioElements] = useState(new Map<string, HTMLAudioElement>())
+
+  const registerAudio = useCallback((src: string, element: HTMLAudioElement) => {
+    audioElements.set(src, element)
+  }, [audioElements])
+
+  const unregisterAudio = useCallback((src: string) => {
+    audioElements.delete(src)
+  }, [audioElements])
+
+  const pauseAllAudio = useCallback(() => {
+    audioElements.forEach((element, src) => {
+      if (!element.paused) {
+        element.pause()
+      }
+    })
+    setIsPlaying(false)
+  }, [audioElements])
+
+  const playAudio = useCallback((src: string) => {
+    // First pause all other audio
+    pauseAllAudio()
+    
+    // Then play the selected audio
+    const element = audioElements.get(src)
+    if (element) {
+      element.currentTime = 0
+      element.play().then(() => {
+        setCurrentlyPlaying(src)
+        setIsPlaying(true)
+        setProgress(0)
+        setCurrentTime(0)
+      }).catch(console.error)
+    }
+  }, [audioElements, pauseAllAudio])
+
+  const pauseAudio = useCallback((src: string) => {
+    const element = audioElements.get(src)
+    if (element && !element.paused) {
+      element.pause()
+      setIsPlaying(false)
+    }
+  }, [audioElements])
 
   return (
     <AudioContext.Provider
@@ -68,8 +115,12 @@ function AudioProvider({ children }: { children: React.ReactNode }) {
         progress,
         duration,
         currentTime,
-        setCurrentlyPlaying,
-        setIsPlaying,
+        audioElements,
+        registerAudio,
+        unregisterAudio,
+        playAudio,
+        pauseAudio,
+        pauseAllAudio,
         setProgress,
         setDuration,
         setCurrentTime,
@@ -559,47 +610,47 @@ const AudioPlayerCompact = ({
   const isCurrentlyPlaying = audioContext.currentlyPlaying === src
   const isPlaying = isCurrentlyPlaying && audioContext.isPlaying
 
-  const togglePlay = () => {
+  // Register this audio element when component mounts
+  useEffect(() => {
     if (audioRef.current) {
-      if (isCurrentlyPlaying) {
-        // If this is the currently playing track
-        if (isPlaying) {
-          audioRef.current.pause()
-          audioContext.setIsPlaying(false)
-        } else {
-          audioRef.current.play()
-          audioContext.setIsPlaying(true)
+      audioContext.registerAudio(src, audioRef.current)
+      
+      // Set up event listeners
+      const audioElement = audioRef.current
+      
+      const handleTimeUpdate = () => {
+        if (isCurrentlyPlaying && audioElement) {
+          const progress = (audioElement.currentTime / audioElement.duration) * 100
+          audioContext.setProgress(isFinite(progress) ? progress : 0)
+          audioContext.setDuration(audioElement.duration)
+          audioContext.setCurrentTime(audioElement.currentTime)
         }
-      } else {
-        // If this is a different track, switch to it
-        // First pause any currently playing audio
-        if (audioContext.currentlyPlaying) {
-          audioContext.setIsPlaying(false)
+      }
+      
+      const handleEnded = () => {
+        if (isCurrentlyPlaying) {
+          audioContext.pauseAllAudio()
         }
-        
-        // Then set this as the new current track
-        audioContext.setCurrentlyPlaying(src)
-        audioContext.setProgress(0)
-        audioContext.setCurrentTime(0)
-        audioRef.current.currentTime = 0
-        
-        // Start playing after a small delay to ensure state is updated
-        setTimeout(() => {
-          if (audioRef.current) {
-            audioRef.current.play()
-            audioContext.setIsPlaying(true)
-          }
-        }, 100)
+      }
+      
+      audioElement.addEventListener('timeupdate', handleTimeUpdate)
+      audioElement.addEventListener('ended', handleEnded)
+      
+      return () => {
+        audioElement.removeEventListener('timeupdate', handleTimeUpdate)
+        audioElement.removeEventListener('ended', handleEnded)
+        audioContext.unregisterAudio(src)
       }
     }
-  }
+  }, [src, isCurrentlyPlaying, audioContext])
 
-  const handleTimeUpdate = () => {
-    if (audioRef.current && isCurrentlyPlaying) {
-      const progress = (audioRef.current.currentTime / audioRef.current.duration) * 100
-      audioContext.setProgress(isFinite(progress) ? progress : 0)
-      audioContext.setDuration(audioRef.current.duration)
-      audioContext.setCurrentTime(audioRef.current.currentTime)
+  const togglePlay = () => {
+    if (isCurrentlyPlaying && isPlaying) {
+      // Pause current track
+      audioContext.pauseAudio(src)
+    } else {
+      // Play this track (will automatically pause others)
+      audioContext.playAudio(src)
     }
   }
 
@@ -610,65 +661,16 @@ const AudioPlayerCompact = ({
     return `${minutes}:${seconds.toString().padStart(2, "0")}`
   }
 
-  // Pause other players when a new one starts
-  useEffect(() => {
-    if (audioRef.current) {
-      const audioElement = audioRef.current
-      
-      // Add event listeners for better control
-      const handlePlay = () => {
-        if (audioContext.currentlyPlaying !== src) {
-          audioElement.pause()
-        }
-      }
-      
-      const handlePause = () => {
-        if (isCurrentlyPlaying) {
-          audioContext.setIsPlaying(false)
-        }
-      }
-      
-      const handleEnded = () => {
-        if (isCurrentlyPlaying) {
-          audioContext.setIsPlaying(false)
-          audioContext.setCurrentlyPlaying(null)
-          audioContext.setProgress(0)
-          audioContext.setCurrentTime(0)
-        }
-      }
-      
-      audioElement.addEventListener('play', handlePlay)
-      audioElement.addEventListener('pause', handlePause) 
-      audioElement.addEventListener('ended', handleEnded)
-      
-      // Control playback based on global state
-      if (isCurrentlyPlaying && audioContext.isPlaying) {
-        audioElement.play().catch(console.error)
-      } else {
-        audioElement.pause()
-      }
-      
-      return () => {
-        audioElement.removeEventListener('play', handlePlay)
-        audioElement.removeEventListener('pause', handlePause)
-        audioElement.removeEventListener('ended', handleEnded)
-      }
-    }
-  }, [audioContext.currentlyPlaying, audioContext.isPlaying, isCurrentlyPlaying, src])
-
   return (
-    <motion.div
-      className="relative flex flex-col mx-auto rounded-3xl overflow-hidden bg-[#121212] backdrop-blur-sm shadow-2xl p-4 w-[320px] h-auto border border-green-500/20"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ 
-        opacity: 1, 
-        y: 0,
-        scale: isCurrentlyPlaying ? 1.12 : 1,
+    <motion.div 
+      className="bg-[#282828] rounded-lg p-3 space-y-2 relative overflow-hidden"
+      animate={{
+        scale: isCurrentlyPlaying ? 1.08 : 1,
         boxShadow: isCurrentlyPlaying 
-          ? "0 0 35px rgba(34, 197, 94, 0.6)"
+          ? "0 0 25px rgba(34, 197, 94, 0.6)"
           : "0 0 0px rgba(34, 197, 94, 0)"
       }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: 0.4, ease: "easeInOut" }}
     >
       {/* Animated background glow for currently playing */}
       {isCurrentlyPlaying && (
@@ -685,7 +687,7 @@ const AudioPlayerCompact = ({
         />
       )}
       
-      <audio ref={audioRef} onTimeUpdate={handleTimeUpdate} src={src} className="hidden" />
+      <audio ref={audioRef} src={src} className="hidden" />
       
       {/* Progress Bar */}
       <div className="w-full bg-[#404040] rounded-full h-1 relative z-10">
@@ -801,47 +803,47 @@ const AudioPlayer = ({
   const isCurrentlyPlaying = audioContext.currentlyPlaying === src
   const isPlaying = isCurrentlyPlaying && audioContext.isPlaying
 
-  const togglePlay = () => {
+  // Register this audio element when component mounts
+  useEffect(() => {
     if (audioRef.current) {
-      if (isCurrentlyPlaying) {
-        // If this is the currently playing track
-        if (isPlaying) {
-          audioRef.current.pause()
-          audioContext.setIsPlaying(false)
-        } else {
-          audioRef.current.play()
-          audioContext.setIsPlaying(true)
+      audioContext.registerAudio(src, audioRef.current)
+      
+      // Set up event listeners
+      const audioElement = audioRef.current
+      
+      const handleTimeUpdate = () => {
+        if (isCurrentlyPlaying && audioElement) {
+          const progress = (audioElement.currentTime / audioElement.duration) * 100
+          audioContext.setProgress(isFinite(progress) ? progress : 0)
+          audioContext.setDuration(audioElement.duration)
+          audioContext.setCurrentTime(audioElement.currentTime)
         }
-      } else {
-        // If this is a different track, switch to it
-        // First pause any currently playing audio
-        if (audioContext.currentlyPlaying) {
-          audioContext.setIsPlaying(false)
+      }
+      
+      const handleEnded = () => {
+        if (isCurrentlyPlaying) {
+          audioContext.pauseAllAudio()
         }
-        
-        // Then set this as the new current track
-        audioContext.setCurrentlyPlaying(src)
-        audioContext.setProgress(0)
-        audioContext.setCurrentTime(0)
-        audioRef.current.currentTime = 0
-        
-        // Start playing after a small delay to ensure state is updated
-        setTimeout(() => {
-          if (audioRef.current) {
-            audioRef.current.play()
-            audioContext.setIsPlaying(true)
-          }
-        }, 100)
+      }
+      
+      audioElement.addEventListener('timeupdate', handleTimeUpdate)
+      audioElement.addEventListener('ended', handleEnded)
+      
+      return () => {
+        audioElement.removeEventListener('timeupdate', handleTimeUpdate)
+        audioElement.removeEventListener('ended', handleEnded)
+        audioContext.unregisterAudio(src)
       }
     }
-  }
+  }, [src, isCurrentlyPlaying, audioContext])
 
-  const handleTimeUpdate = () => {
-    if (audioRef.current && isCurrentlyPlaying) {
-      const progress = (audioRef.current.currentTime / audioRef.current.duration) * 100
-      audioContext.setProgress(isFinite(progress) ? progress : 0)
-      audioContext.setCurrentTime(audioRef.current.currentTime)
-      audioContext.setDuration(audioRef.current.duration)
+  const togglePlay = () => {
+    if (isCurrentlyPlaying && isPlaying) {
+      // Pause current track
+      audioContext.pauseAudio(src)
+    } else {
+      // Play this track (will automatically pause others)
+      audioContext.playAudio(src)
     }
   }
 
@@ -861,17 +863,6 @@ const AudioPlayer = ({
     const seconds = Math.floor(time % 60)
     return `${minutes}:${seconds.toString().padStart(2, "0")}`
   }
-
-  // Pause other players when a new one starts
-  useEffect(() => {
-    if (audioRef.current) {
-      if (isCurrentlyPlaying && audioContext.isPlaying) {
-        audioRef.current.play()
-      } else {
-        audioRef.current.pause()
-      }
-    }
-  }, [audioContext.currentlyPlaying, audioContext.isPlaying, isCurrentlyPlaying])
 
   return (
     <motion.div
@@ -902,7 +893,7 @@ const AudioPlayer = ({
         />
       )}
       
-      <audio ref={audioRef} onTimeUpdate={handleTimeUpdate} src={src} className="hidden" />
+      <audio ref={audioRef} src={src} className="hidden" />
 
       {cover && (
         <div className="bg-gradient-to-br from-green-400/20 to-green-600/20 overflow-hidden rounded-2xl h-[200px] w-full relative mb-4">
