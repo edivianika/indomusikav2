@@ -1043,11 +1043,13 @@ const SpotifyLandingPage = () => {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [jingleSamples, setJingleSamples] = useState<any[]>([])
   const [currentPage, setCurrentPage] = useState(0)
+  const [pageDirection, setPageDirection] = useState(1) // 1 for next, -1 for prev
   const [isMobile, setIsMobile] = useState(false)
   const [currentlyPlayingAudio, setCurrentlyPlayingAudio] = useState<string | null>(null)
   const [currentTrackIndex, setCurrentTrackIndex] = useState<number | null>(null)
   const [showBottomPlayer, setShowBottomPlayer] = useState(false)
   const [isAudioActuallyPlaying, setIsAudioActuallyPlaying] = useState(false)
+  const jingleSectionRef = useRef<HTMLElement>(null)
   const samplesPerPage = 4
   const mobilePerPage = 1
 
@@ -1162,6 +1164,23 @@ const SpotifyLandingPage = () => {
       setCurrentlyPlayingAudio(jingleSamples[nextIndex].audio_url)
       // Ensure bottom player stays open
       setShowBottomPlayer(true)
+      
+      // Auto-scroll to the page containing the next track
+      const currentSamplesPerPage = isMobile ? mobilePerPage : samplesPerPage
+      const targetPage = Math.floor(nextIndex / currentSamplesPerPage)
+      if (targetPage !== currentPage) {
+        console.log('Auto-scrolling to page:', targetPage, 'for track:', nextIndex)
+        setCurrentPage(targetPage)
+        // Smooth scroll to jingle section after a short delay
+        setTimeout(() => {
+          if (jingleSectionRef.current) {
+            jingleSectionRef.current.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'center' 
+            })
+          }
+        }, 300)
+      }
     }
   }
 
@@ -1174,6 +1193,23 @@ const SpotifyLandingPage = () => {
       setCurrentlyPlayingAudio(jingleSamples[prevIndex].audio_url)
       // Ensure bottom player stays open
       setShowBottomPlayer(true)
+      
+      // Auto-scroll to the page containing the previous track
+      const currentSamplesPerPage = isMobile ? mobilePerPage : samplesPerPage
+      const targetPage = Math.floor(prevIndex / currentSamplesPerPage)
+      if (targetPage !== currentPage) {
+        console.log('Auto-scrolling to page:', targetPage, 'for track:', prevIndex)
+        setCurrentPage(targetPage)
+        // Smooth scroll to jingle section after a short delay
+        setTimeout(() => {
+          if (jingleSectionRef.current) {
+            jingleSectionRef.current.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'center' 
+            })
+          }
+        }, 300)
+      }
     }
   }
 
@@ -1190,19 +1226,19 @@ const SpotifyLandingPage = () => {
       <div className="fixed inset-0 pointer-events-none z-10"></div>
 
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-[#191414] via-[#121212] to-black">
+      <section className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-[#191414] via-[#121212] to-black">
         <div className="absolute inset-0 bg-[url('/happy-business-owner-with-headphones-listening-to-.png')] bg-cover bg-center opacity-20"></div>
         <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-[#121212]/80 to-black/90"></div>
 
         {/* Top notification badges with mobile-responsive positioning */}
-        <div className="absolute top-4 sm:top-6 left-1/2 transform -translate-x-1/2 z-20 w-full max-w-2xl px-4">
-          <div className="flex flex-col sm:flex-row justify-center sm:justify-between items-center gap-2 sm:gap-4">
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1 sm:py-1.5 text-white text-xs sm:text-sm">
+        <div className="absolute top-6 sm:top-8 left-1/2 transform -translate-x-1/2 z-20 w-full max-w-3xl px-4">
+          <div className="flex flex-col sm:flex-row justify-center sm:justify-between items-center gap-3 sm:gap-6">
+            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 text-white text-sm">
               <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-              <span className="whitespace-nowrap">🔥 1000+ Jingle Sudah Dibuat</span>
+              <span className="whitespace-nowrap font-medium">🔥 1000+ Jingle Sudah Dibuat</span>
             </div>
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1 sm:py-1.5 text-white text-xs sm:text-sm">
-              <span className="whitespace-nowrap">⭐ Rating 4.9/5</span>
+            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 text-white text-sm">
+              <span className="whitespace-nowrap font-medium">⭐ Rating 4.9/5</span>
             </div>
           </div>
         </div>
@@ -1234,22 +1270,22 @@ const SpotifyLandingPage = () => {
           ))}
         </div>
 
-        <div className="relative z-10 text-center px-4 max-w-5xl mx-auto mt-28 sm:mt-20 md:mt-12">
+        <div className="relative z-10 text-center px-4 max-w-6xl mx-auto mt-24 sm:mt-28 md:mt-20">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="mb-10"
+            className="mb-8"
           >
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-6 text-white leading-tight px-2">
-              <span className="block sm:inline">👉 Biar Usaha Kamu Makin Dikenal,</span>
-              <br className="hidden sm:block" />
-              <span className="text-green-400 block mt-3 sm:mt-0 sm:inline">Bikin Jingle yang Nempel di Kepala!</span>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-white leading-snug">
+              <span className="block mb-1">👉 Biar Usaha Kamu</span>
+              <span className="block mb-1">Makin Dikenal,</span>
+              <span className="text-green-400 block">Bikin Jingle yang Nempel di Kepala!</span>
             </h1>
 
-            <p className="text-base sm:text-lg md:text-xl lg:text-xl text-gray-300 mb-10 max-w-4xl mx-auto leading-relaxed px-2">
-              Bayangin pelanggan nyebut nama usaha kamu sambil nyanyi. Seru kan? <br/>
-Tapi bukan cuma seru — jingle bikin usaha kamu lebih gampang diingat, lebih dipercaya, dan beda dari pesaing.
+            <p className="text-base sm:text-lg md:text-xl text-gray-300 mb-10 max-w-4xl mx-auto leading-relaxed">
+              Bayangin pelanggan nyebut nama usaha kamu sambil nyanyi. Seru kan?<br className="hidden sm:block" />
+              Tapi bukan cuma seru — jingle bikin usaha kamu lebih gampang diingat, lebih dipercaya, dan beda dari pesaing.
             </p>
           </motion.div>
 
@@ -1257,19 +1293,19 @@ Tapi bukan cuma seru — jingle bikin usaha kamu lebih gampang diingat, lebih di
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-10 px-2"
+            className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center mb-12"
           >
             <Button
               size="lg"
               onClick={() => setIsFormOpen(true)}
-              className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 w-full sm:w-auto"
+              className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 sm:px-10 py-4 sm:py-5 text-lg sm:text-xl font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 w-full sm:w-auto transform hover:scale-105"
             >
               🚀 Pesan Sekarang Mulai Rp199K
             </Button>
             <Button
               variant="outline"
               size="lg"
-              className="border-green-500 text-green-400 hover:bg-green-500/10 px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg rounded-full bg-transparent w-full sm:w-auto"
+              className="border-green-500 text-green-400 hover:bg-green-500/10 px-8 sm:px-10 py-4 sm:py-5 text-lg sm:text-xl rounded-full bg-transparent w-full sm:w-auto hover:border-green-400 transition-all duration-300 transform hover:scale-105"
             >
               🎧 Dengar Contoh Jingle
             </Button>
@@ -1279,18 +1315,18 @@ Tapi bukan cuma seru — jingle bikin usaha kamu lebih gampang diingat, lebih di
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="flex flex-wrap justify-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-400 px-2"
+            className="flex flex-wrap justify-center gap-3 sm:gap-4 text-sm sm:text-base text-gray-400 mb-8"
           >
-            <Badge variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/30">
+            <Badge variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/30 px-4 py-2 text-sm font-medium">
               2 Lagu Original
             </Badge>
-            <Badge variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/30">
+            <Badge variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/30 px-4 py-2 text-sm font-medium">
               Free Lirik
             </Badge>
-            <Badge variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/30">
+            <Badge variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/30 px-4 py-2 text-sm font-medium">
               Hak Pakai Komersial
             </Badge>
-            <Badge variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/30">
+            <Badge variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/30 px-4 py-2 text-sm font-medium">
               Fast Delivery
             </Badge>
           </motion.div>
@@ -1299,7 +1335,7 @@ Tapi bukan cuma seru — jingle bikin usaha kamu lebih gampang diingat, lebih di
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.6 }}
-            className="mt-12"
+            className="mt-8"
           >
             <WaveformAnimation />
           </motion.div>
@@ -1488,7 +1524,7 @@ Tapi bukan cuma seru — jingle bikin usaha kamu lebih gampang diingat, lebih di
               {
                 icon: <ArrowRight className="w-8 h-8 md:w-12 md:h-12" />,
                 title: "Cepat",
-                description: "2–4 hari, revisi sampai puas.",
+                description: "1 hari, revisi sampai puas.",
                 color: "from-yellow-400 to-orange-500",
               },
               {
@@ -1529,7 +1565,7 @@ Tapi bukan cuma seru — jingle bikin usaha kamu lebih gampang diingat, lebih di
       </section>
 
       {/* Demo Section */}
-      <section className="py-20 px-4 bg-black">
+      <section ref={jingleSectionRef} className="py-20 px-4 bg-black">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -1579,6 +1615,7 @@ Tapi bukan cuma seru — jingle bikin usaha kamu lebih gampang diingat, lebih di
                 e.stopPropagation()
                 const newPage = Math.max(0, currentPage - 1)
                 console.log('Page nav prev clicked, currentPage:', currentPage, 'newPage:', newPage)
+                setPageDirection(-1)
                 setCurrentPage(newPage)
               }}
               disabled={currentPage === 0}
@@ -1596,6 +1633,7 @@ Tapi bukan cuma seru — jingle bikin usaha kamu lebih gampang diingat, lebih di
                 e.stopPropagation()
                 const newPage = Math.min(totalPages - 1, currentPage + 1)
                 console.log('Page nav next clicked, currentPage:', currentPage, 'newPage:', newPage, 'totalPages:', totalPages)
+                setPageDirection(1)
                 setCurrentPage(newPage)
               }}
               disabled={currentPage >= totalPages - 1}
@@ -1606,74 +1644,117 @@ Tapi bukan cuma seru — jingle bikin usaha kamu lebih gampang diingat, lebih di
 
             {/* Mobile Carousel Layout */}
             <div className="md:hidden relative h-[420px] overflow-visible px-6 pointer-events-auto">
-              <motion.div 
-                className="flex items-center justify-center h-full relative"
-                key={currentPage}
-                initial={{ x: 300, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: -300, opacity: 0 }}
-                transition={{ 
-                  type: "spring", 
-                  stiffness: 300, 
-                  damping: 30,
-                  duration: 0.6
-                }}
-              >
+              <AnimatePresence mode="wait">
+                <motion.div 
+                  className="flex items-center justify-center h-full relative"
+                  key={currentPage}
+                  initial={{ x: pageDirection * 400, opacity: 0, scale: 0.85, rotateY: pageDirection * 20 }}
+                  animate={{ x: 0, opacity: 1, scale: 1, rotateY: 0 }}
+                  exit={{ x: pageDirection * -400, opacity: 0, scale: 0.85, rotateY: pageDirection * -20 }}
+                  transition={{ 
+                    type: "spring", 
+                    stiffness: 250, 
+                    damping: 25,
+                    mass: 0.8,
+                    duration: 1.2
+                  }}
+                >
                 {jingleSamples
                   .slice(currentPage * currentSamplesPerPage, (currentPage + 1) * currentSamplesPerPage)
                   .map((sample, index) => {
                     return (
                       <motion.div
                         key={sample.id}
-                        initial={{ scale: 0.9, opacity: 0 }}
+                        initial={{ scale: 0.7, opacity: 0, rotateY: pageDirection * -30, z: -100 }}
                         animate={{ 
                           scale: 1,
-                          opacity: 1
+                          opacity: 1,
+                          rotateY: 0,
+                          z: 0
+                        }}
+                        exit={{
+                          scale: 0.7,
+                          opacity: 0,
+                          rotateY: pageDirection * 30,
+                          z: -100
                         }}
                         transition={{ 
-                          delay: 0.2,
-                          duration: 0.4,
-                          ease: "easeOut"
+                          delay: 0.4,
+                          duration: 0.8,
+                          ease: [0.25, 0.1, 0.25, 1],
+                          type: "spring",
+                          stiffness: 200,
+                          damping: 20
                         }}
-                        className="relative"
+                        whileHover={{
+                          scale: 1.08,
+                          rotateY: 3,
+                          y: -12,
+                          z: 50,
+                          transition: {
+                            type: "spring",
+                            stiffness: 400,
+                            damping: 25,
+                            duration: 0.3
+                          }
+                        }}
+                        whileTap={{ scale: 0.92, y: -5 }}
+                        className="relative z-10"
                       >
-                        {/* Background cards for depth effect */}
+                        {/* Enhanced Background Preview Cards */}
+                        {/* Previous item shadow */}
                         {currentPage > 0 && (
                           <motion.div
-                            className="absolute -left-6 top-2"
-                            style={{ zIndex: 1 }}
-                            initial={{ x: -20, opacity: 0 }}
-                            animate={{ x: 0, opacity: 0.3, scale: 0.85 }}
-                            transition={{ delay: 0.3, duration: 0.5 }}
+                            className="absolute -left-8 top-4 z-0"
+                            initial={{ x: -40, opacity: 0, scale: 0.7, rotateY: -25 }}
+                            animate={{ x: 0, opacity: 0.4, scale: 0.75, rotateY: -15 }}
+                            exit={{ x: -40, opacity: 0, scale: 0.6, rotateY: -30 }}
+                            transition={{ 
+                              type: "spring", 
+                              stiffness: 200, 
+                              damping: 20, 
+                              delay: 0.1
+                            }}
                           >
-                            <Card className="bg-[#1a1a1a] border-green-500/10 w-[200px] transform rotate-[-5deg]">
-                              <div className="p-3">
-                                <div className="bg-gradient-to-br from-green-400/10 to-green-600/10 rounded-xl h-[120px] w-full mb-3" />
-                                <div className="space-y-2">
-                                  <div className="h-3 bg-gray-700 rounded w-3/4" />
-                                  <div className="h-2 bg-gray-800 rounded w-1/2" />
+                            <Card className="bg-gradient-to-br from-[#1a1a1a]/60 to-[#0a0a0a]/60 border-green-500/10 w-[220px] h-[320px] transform rotate-[-8deg] backdrop-blur-sm">
+                              <div className="p-3 h-full">
+                                <div className="bg-gradient-to-br from-green-400/5 to-green-600/5 rounded-xl h-[140px] w-full mb-3 relative">
+                                  <div className="absolute inset-2 bg-gray-700/30 rounded-lg animate-pulse" />
                                 </div>
+                                <div className="space-y-2">
+                                  <div className="h-3 bg-gray-700/40 rounded w-3/4 animate-pulse" />
+                                  <div className="h-2 bg-gray-800/40 rounded w-1/2 animate-pulse" />
+                                </div>
+                                <div className="mt-4 text-xs text-gray-500/60 text-center">Previous</div>
                               </div>
                             </Card>
                           </motion.div>
                         )}
                         
-                        {/* Next card hint */}
+                        {/* Next item shadow */}
                         {currentPage < totalPages - 1 && (
                           <motion.div
-                            className="absolute -right-6 top-2"
-                            style={{ zIndex: 1 }}
-                            initial={{ x: 20, opacity: 0 }}
-                            animate={{ x: 0, opacity: 0.3, scale: 0.85 }}
-                            transition={{ delay: 0.3, duration: 0.5 }}
+                            className="absolute -right-8 top-4 z-0"
+                            initial={{ x: 40, opacity: 0, scale: 0.7, rotateY: 25 }}
+                            animate={{ x: 0, opacity: 0.4, scale: 0.75, rotateY: 15 }}
+                            exit={{ x: 40, opacity: 0, scale: 0.6, rotateY: 30 }}
+                            transition={{ 
+                              type: "spring", 
+                              stiffness: 200, 
+                              damping: 20, 
+                              delay: 0.1
+                            }}
                           >
-                            <Card className="bg-[#1a1a1a] border-green-500/10 w-[200px] transform rotate-[5deg]">
-                              <div className="p-3">
-                                <div className="bg-gradient-to-br from-green-400/10 to-green-600/10 rounded-xl h-[120px] w-full mb-3" />
-                                <div className="space-y-2">
-                                  <div className="h-3 bg-gray-700 rounded w-3/4" />
-                                  <div className="h-2 bg-gray-800 rounded w-1/2" />
+                            <Card className="bg-gradient-to-br from-[#1a1a1a]/60 to-[#0a0a0a]/60 border-green-500/10 w-[220px] h-[320px] transform rotate-[8deg] backdrop-blur-sm">
+                              <div className="p-3 h-full">
+                                <div className="bg-gradient-to-br from-green-400/5 to-green-600/5 rounded-xl h-[140px] w-full mb-3 relative">
+                                  <div className="absolute inset-2 bg-gray-700/30 rounded-lg animate-pulse" />
                                 </div>
+                                <div className="space-y-2">
+                                  <div className="h-3 bg-gray-700/40 rounded w-3/4 animate-pulse" />
+                                  <div className="h-2 bg-gray-800/40 rounded w-1/2 animate-pulse" />
+                                </div>
+                                <div className="mt-4 text-xs text-gray-500/60 text-center">Next</div>
                               </div>
                             </Card>
                           </motion.div>
@@ -1681,9 +1762,22 @@ Tapi bukan cuma seru — jingle bikin usaha kamu lebih gampang diingat, lebih di
 
                         {/* Main card */}
                         <motion.div
-                          whileHover={{ scale: 1.05, y: -5 }}
-                          transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                          className="mx-3"
+                          whileHover={{ 
+                            scale: 1.08, 
+                            y: -8, 
+                            rotateX: 5,
+                            transition: { type: "spring", stiffness: 300, damping: 20 }
+                          }}
+                          animate={{
+                            y: [0, -2, 0],
+                            rotateX: [0, 1, 0]
+                          }}
+                          transition={{
+                            duration: 4,
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                          }}
+                          className="mx-3 relative z-20"
                         >
                           <Card className={`bg-[#1a1a1a] overflow-hidden group transition-all duration-500 w-full max-w-[280px] mx-auto relative z-10 ${
                             currentlyPlayingAudio !== null && 
@@ -1753,6 +1847,7 @@ Tapi bukan cuma seru — jingle bikin usaha kamu lebih gampang diingat, lebih di
                   })
                 }
               </motion.div>
+              </AnimatePresence>
             </div>
 
             {/* Desktop Grid Layout */}
@@ -1760,14 +1855,15 @@ Tapi bukan cuma seru — jingle bikin usaha kamu lebih gampang diingat, lebih di
               <AnimatePresence mode="wait">
                 <motion.div
                   key={currentPage}
-                  initial={{ x: 100, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: -100, opacity: 0 }}
+                  initial={{ x: pageDirection * 300, opacity: 0, scale: 0.9, rotateY: pageDirection * 15 }}
+                  animate={{ x: 0, opacity: 1, scale: 1, rotateY: 0 }}
+                  exit={{ x: pageDirection * -300, opacity: 0, scale: 0.9, rotateY: pageDirection * -15 }}
                   transition={{ 
                     type: "spring", 
-                    stiffness: 300, 
-                    damping: 30,
-                    duration: 0.5
+                    stiffness: 200, 
+                    damping: 25,
+                    mass: 0.8,
+                    duration: 1.0
                   }}
                   className="contents"
                 >
@@ -1776,18 +1872,29 @@ Tapi bukan cuma seru — jingle bikin usaha kamu lebih gampang diingat, lebih di
                     .map((sample, index) => (
                       <motion.div
                         key={sample.id}
-                        initial={{ opacity: 0, y: 30, scale: 0.9 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        initial={{ opacity: 0, x: 60, y: 30, scale: 0.8, rotateY: 15 }}
+                        animate={{ opacity: 1, x: 0, y: 0, scale: 1, rotateY: 0 }}
                         transition={{ 
-                          duration: 0.6, 
-                          delay: index * 0.1,
-                          ease: "easeOut"
+                          duration: 1.0, 
+                          delay: index * 0.12,
+                          ease: [0.25, 0.1, 0.25, 1],
+                          type: "spring",
+                          stiffness: 200,
+                          damping: 20
                         }}
                         whileHover={{ 
-                          scale: 1.05, 
-                          y: -10,
-                          transition: { type: "spring", stiffness: 300, damping: 20 }
+                          scale: 1.12, 
+                          y: -20,
+                          rotateY: 8,
+                          z: 50,
+                          transition: { 
+                            type: "spring", 
+                            stiffness: 300, 
+                            damping: 20,
+                            duration: 0.4
+                          }
                         }}
+                        whileTap={{ scale: 0.92, y: -8 }}
                         className="flex justify-center"
                       >
                         <Card className={`bg-[#1a1a1a] overflow-hidden group transition-all duration-500 ${
