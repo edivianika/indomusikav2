@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { createClient } from '@/lib/supabase/client'
+import { createJingleSample, uploadFile, type JingleSampleData } from '@/lib/jingle-actions'
 
 interface FormData {
   title: string
@@ -91,78 +92,57 @@ export function AddSongForm() {
         imagePath = `covers/${imageFileName}`
       }
 
-      // Upload audio file
+      // Upload audio file using server action
       setUploadState(prev => ({ ...prev, progress: 30, message: 'Mengupload file audio...' }))
-      const { data: audioUpload, error: audioError } = await supabase.storage
-        .from('jingle-files')
-        .upload(audioPath, formData.audio_file, {
-          cacheControl: '3600',
-          upsert: false
-        })
-
-      if (audioError) {
-        // If bucket doesn't exist, try to create it
-        if (audioError.message.includes('Bucket not found')) {
-          setUploadState(prev => ({ ...prev, progress: 10, message: 'Membuat storage bucket...' }))
-          
-          // Try uploading to a public bucket (fallback)
-          const fallbackPath = `public/${audioPath}`
-          const { data: fallbackUpload, error: fallbackError } = await supabase.storage
-            .from('public')
-            .upload(fallbackPath, formData.audio_file, {
-              cacheControl: '3600',
-              upsert: false
-            })
-          
-          if (fallbackError) {
-            throw new Error(`Audio upload failed: ${fallbackError.message}`)
-          }
-        } else {
-          throw new Error(`Audio upload failed: ${audioError.message}`)
+      const audioUploadResult = await uploadFile(formData.audio_file, 'jingle-files', audioPath)
+      
+      if (!audioUploadResult.success) {
+        // Try fallback to public bucket if jingle-files doesn't exist
+        const fallbackResult = await uploadFile(formData.audio_file, 'public', `public/${audioPath}`)
+        if (!fallbackResult.success) {
+          throw new Error(`Audio upload failed: ${audioUploadResult.error}`)
         }
       }
 
-      // Get audio URL
-      const { data: { publicUrl: audioUrl } } = supabase.storage
-        .from(audioError?.message.includes('Bucket not found') ? 'public' : 'jingle-files')
-        .getPublicUrl(audioError?.message.includes('Bucket not found') ? `public/${audioPath}` : audioPath)
+      const audioUrl = audioUploadResult.success ? audioUploadResult.url : ''
+      
+      if (!audioUrl) {
+        throw new Error('Failed to get audio URL after upload')
+      }
 
       // Upload cover image if provided
       let coverImageUrl = null
       if (formData.cover_image_file && imagePath) {
         setUploadState(prev => ({ ...prev, progress: 60, message: 'Mengupload gambar cover...' }))
         
-        const { data: imageUpload, error: imageError } = await supabase.storage
-          .from(audioError?.message.includes('Bucket not found') ? 'public' : 'jingle-files')
-          .upload(audioError?.message.includes('Bucket not found') ? `public/${imagePath}` : imagePath, formData.cover_image_file, {
-            cacheControl: '3600',
-            upsert: false
-          })
-
-        if (!imageError) {
-          const { data: { publicUrl } } = supabase.storage
-            .from(audioError?.message.includes('Bucket not found') ? 'public' : 'jingle-files')
-            .getPublicUrl(audioError?.message.includes('Bucket not found') ? `public/${imagePath}` : imagePath)
-          coverImageUrl = publicUrl
+        const imageUploadResult = await uploadFile(formData.cover_image_file, 'jingle-files', imagePath)
+        
+        if (imageUploadResult.success) {
+          coverImageUrl = imageUploadResult.url
+        } else {
+          // Try fallback for image as well
+          const fallbackImageResult = await uploadFile(formData.cover_image_file, 'public', `public/${imagePath}`)
+          if (fallbackImageResult.success) {
+            coverImageUrl = fallbackImageResult.url
+          }
         }
       }
 
-      // Save to database
+      // Save to database using server action
       setUploadState(prev => ({ ...prev, progress: 80, message: 'Menyimpan ke database...' }))
       
-      const { data, error } = await supabase
-        .from('jingle_samples')
-        .insert([{
-          title: formData.title,
-          description: formData.description || null,
-          business_type: formData.business_type || null,
-          audio_url: audioUrl,
-          cover_image_url: coverImageUrl
-        }])
-        .select()
+      const jingleData: JingleSampleData = {
+        title: formData.title,
+        description: formData.description || undefined,
+        business_type: formData.business_type || undefined,
+        audio_url: audioUrl,
+        cover_image_url: coverImageUrl || undefined
+      }
 
-      if (error) {
-        throw error
+      const result = await createJingleSample(jingleData)
+
+      if (!result.success) {
+        throw new Error(`Database error: ${result.error}`)
       }
 
       setUploadState({
