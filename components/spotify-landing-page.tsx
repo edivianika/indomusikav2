@@ -1049,6 +1049,7 @@ const SpotifyLandingPage = () => {
   const [currentTrackIndex, setCurrentTrackIndex] = useState<number | null>(null)
   const [showBottomPlayer, setShowBottomPlayer] = useState(false)
   const [isAudioActuallyPlaying, setIsAudioActuallyPlaying] = useState(false)
+  const [isLoadingSamples, setIsLoadingSamples] = useState(true)
   const jingleSectionRef = useRef<HTMLElement>(null)
   const samplesPerPage = 4
   const mobilePerPage = 1
@@ -1081,6 +1082,7 @@ const SpotifyLandingPage = () => {
   }, [])
 
   const fetchJingleSamples = async () => {
+    setIsLoadingSamples(true)
     try {
       const { data, error } = await createClient()
         .from("jingle_samples")
@@ -1297,6 +1299,8 @@ const SpotifyLandingPage = () => {
       }
     } catch (error) {
       console.error("Error:", error)
+    } finally {
+      setIsLoadingSamples(false)
     }
   }
 
@@ -1755,35 +1759,19 @@ const SpotifyLandingPage = () => {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <div className="flex items-center justify-center gap-4 mb-8">
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold">
-                Dengerin Dulu Contoh Jingle Kita <span className="text-green-400">🎧</span>
-              </h2>
-              <motion.button
-                onClick={() => {
-                  // Reset audio player state and pagination
-                  setCurrentlyPlayingAudio(null)
-                  setCurrentTrackIndex(null)
-                  setShowBottomPlayer(false)
-                  setIsAudioActuallyPlaying(false)
-                  setCurrentPage(0)
-                  
-                  // Fetch new random samples
-                  fetchJingleSamples()
-                }}
-                className="bg-green-500/20 hover:bg-green-500/30 border border-green-500/50 hover:border-green-400 text-green-400 p-2 sm:p-3 rounded-full transition-all duration-300 group hover:scale-110 hover:shadow-lg hover:shadow-green-500/25"
-                whileHover={{ scale: 1.1, rotate: 180 }}
-                whileTap={{ scale: 0.9 }}
-                title="Refresh untuk mendapatkan jingle acak baru"
-              >
-                <svg className="w-5 h-5 sm:w-6 sm:h-6 group-hover:text-green-300 transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              </motion.button>
-            </div>
-            <p className="text-lg text-gray-400 mb-8">
-              Pilih dari {jingleSamples.length} contoh jingle berkualitas untuk berbagai jenis usaha
-            </p>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-8">
+              Dengerin Dulu Contoh Jingle Kita <span className="text-green-400">🎧</span>
+            </h2>
+            {isLoadingSamples ? (
+              <div className="flex items-center justify-center gap-2 text-lg text-gray-400 mb-8">
+                <div className="animate-spin w-5 h-5 border-2 border-green-400 border-t-transparent rounded-full"></div>
+                <span>Memuat contoh jingle...</span>
+              </div>
+            ) : (
+              <p className="text-lg text-gray-400 mb-8">
+                Pilih dari {jingleSamples.length} contoh jingle berkualitas untuk berbagai jenis usaha
+              </p>
+            )}
           </motion.div>
 
           {/* Desktop Navigation (above cards) */}
@@ -1810,41 +1798,99 @@ const SpotifyLandingPage = () => {
 
           {/* Cards Container with Side Navigation */}
           <div className="relative pointer-events-none">
-            {/* Left Navigation Button */}
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                const newPage = Math.max(0, currentPage - 1)
-                console.log('Page nav prev clicked, currentPage:', currentPage, 'newPage:', newPage)
-                setPageDirection(-1)
-                setCurrentPage(newPage)
-              }}
-              disabled={currentPage === 0}
-              className="absolute left-2 md:-left-16 top-1/2 transform -translate-y-1/2 z-[70] border-2 border-green-500 text-green-400 hover:bg-green-500/20 disabled:opacity-30 disabled:cursor-not-allowed bg-black/95 backdrop-blur-sm px-4 py-4 hover:scale-110 shadow-xl transition-all duration-200 min-h-[52px] min-w-[52px] touch-manipulation rounded-lg pointer-events-auto"
-            >
-              <ArrowLeft className="h-6 w-6" />
-            </Button>
+            {/* Loading State */}
+            {isLoadingSamples ? (
+              <div className="relative">
+                {/* Mobile Loading Skeleton */}
+                <div className="md:hidden relative h-[420px] overflow-visible px-6 flex items-center justify-center">
+                  <Card className="bg-[#1a1a1a]/50 border-green-500/20 w-full max-w-[280px] mx-auto animate-pulse">
+                    <div className="p-4">
+                      <div className="bg-gradient-to-br from-green-400/10 to-green-600/10 rounded-xl h-[180px] w-full mb-4">
+                        <div className="w-full h-full bg-gray-700/30 rounded-xl animate-pulse" />
+                      </div>
+                      <div className="space-y-3">
+                        <div className="h-5 bg-gray-700/40 rounded w-3/4 animate-pulse" />
+                        <div className="h-3 bg-gray-800/40 rounded w-1/2 animate-pulse" />
+                        <div className="bg-[#282828]/50 rounded-lg p-3 space-y-2">
+                          <div className="w-full bg-[#404040]/50 rounded-full h-1" />
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 bg-green-500/30 rounded-full animate-pulse" />
+                              <div className="h-3 bg-gray-600/40 rounded w-8 animate-pulse" />
+                            </div>
+                            <div className="w-6 h-6 bg-gray-600/40 rounded-full animate-pulse" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
 
-            {/* Right Navigation Button */}
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                const newPage = Math.min(totalPages - 1, currentPage + 1)
-                console.log('Page nav next clicked, currentPage:', currentPage, 'newPage:', newPage, 'totalPages:', totalPages)
-                setPageDirection(1)
-                setCurrentPage(newPage)
-              }}
-              disabled={currentPage >= totalPages - 1}
-              className="absolute right-2 md:-right-16 top-1/2 transform -translate-y-1/2 z-[70] border-2 border-green-500 text-green-400 hover:bg-green-500/20 disabled:opacity-30 disabled:cursor-not-allowed bg-black/95 backdrop-blur-sm px-4 py-4 hover:scale-110 shadow-xl transition-all duration-200 min-h-[52px] min-w-[52px] touch-manipulation rounded-lg pointer-events-auto"
-            >
-              <ArrowRight className="h-6 w-6" />
-            </Button>
+                {/* Desktop Loading Skeleton */}
+                <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pointer-events-auto">
+                  {[...Array(4)].map((_, index) => (
+                    <Card key={index} className="bg-[#1a1a1a]/50 border-green-500/20 animate-pulse">
+                      <div className="p-4">
+                        <div className="bg-gradient-to-br from-green-400/10 to-green-600/10 rounded-xl h-[160px] w-full mb-4">
+                          <div className="w-full h-full bg-gray-700/30 rounded-xl animate-pulse" />
+                        </div>
+                        <div className="space-y-3">
+                          <div className="h-4 bg-gray-700/40 rounded w-3/4 animate-pulse" />
+                          <div className="h-3 bg-gray-800/40 rounded w-1/2 animate-pulse" />
+                          <div className="bg-[#282828]/50 rounded-lg p-3 space-y-2">
+                            <div className="w-full bg-[#404040]/50 rounded-full h-1" />
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 bg-green-500/30 rounded-full animate-pulse" />
+                                <div className="h-3 bg-gray-600/40 rounded w-8 animate-pulse" />
+                              </div>
+                              <div className="w-6 h-6 bg-gray-600/40 rounded-full animate-pulse" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Navigation Buttons - Only show when not loading */}
+                {/* Left Navigation Button */}
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    const newPage = Math.max(0, currentPage - 1)
+                    console.log('Page nav prev clicked, currentPage:', currentPage, 'newPage:', newPage)
+                    setPageDirection(-1)
+                    setCurrentPage(newPage)
+                  }}
+                  disabled={currentPage === 0}
+                  className="absolute left-2 md:-left-16 top-1/2 transform -translate-y-1/2 z-[70] border-2 border-green-500 text-green-400 hover:bg-green-500/20 disabled:opacity-30 disabled:cursor-not-allowed bg-black/95 backdrop-blur-sm px-4 py-4 hover:scale-110 shadow-xl transition-all duration-200 min-h-[52px] min-w-[52px] touch-manipulation rounded-lg pointer-events-auto"
+                >
+                  <ArrowLeft className="h-6 w-6" />
+                </Button>
+
+                {/* Right Navigation Button */}
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    const newPage = Math.min(totalPages - 1, currentPage + 1)
+                    console.log('Page nav next clicked, currentPage:', currentPage, 'newPage:', newPage, 'totalPages:', totalPages)
+                    setPageDirection(1)
+                    setCurrentPage(newPage)
+                  }}
+                  disabled={currentPage >= totalPages - 1}
+                  className="absolute right-2 md:-right-16 top-1/2 transform -translate-y-1/2 z-[70] border-2 border-green-500 text-green-400 hover:bg-green-500/20 disabled:opacity-30 disabled:cursor-not-allowed bg-black/95 backdrop-blur-sm px-4 py-4 hover:scale-110 shadow-xl transition-all duration-200 min-h-[52px] min-w-[52px] touch-manipulation rounded-lg pointer-events-auto"
+                >
+                  <ArrowRight className="h-6 w-6" />
+                </Button>
 
             {/* Mobile Carousel Layout */}
             <div className="md:hidden relative h-[420px] overflow-visible px-6 pointer-events-auto">
@@ -2169,6 +2215,8 @@ const SpotifyLandingPage = () => {
                 </motion.div>
               </AnimatePresence>
             </div>
+              </>
+            )}
           </div>
 
           {/* Pagination Dots */}
