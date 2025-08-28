@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect, createContext, useContext, useCallback } from "react"
+import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   Play,
@@ -35,108 +35,6 @@ declare global {
   interface Window {
     fbq: any
   }
-}
-
-// Global Audio Player Context - Redesigned for better control
-interface AudioContextType {
-  currentlyPlaying: string | null
-  isPlaying: boolean
-  progress: number
-  duration: number
-  currentTime: number
-  audioElements: Map<string, HTMLAudioElement>
-  registerAudio: (src: string, element: HTMLAudioElement) => void
-  unregisterAudio: (src: string) => void
-  playAudio: (src: string) => void
-  pauseAudio: (src: string) => void
-  pauseAllAudio: () => void
-  setProgress: (progress: number) => void
-  setDuration: (duration: number) => void
-  setCurrentTime: (time: number) => void
-}
-
-const AudioContext = createContext<AudioContextType | null>(null)
-
-function AudioProvider({ children }: { children: React.ReactNode }) {
-  const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [progress, setProgress] = useState(0)
-  const [duration, setDuration] = useState(0)
-  const [currentTime, setCurrentTime] = useState(0)
-  const [audioElements] = useState(new Map<string, HTMLAudioElement>())
-
-  const registerAudio = useCallback((src: string, element: HTMLAudioElement) => {
-    audioElements.set(src, element)
-  }, [audioElements])
-
-  const unregisterAudio = useCallback((src: string) => {
-    audioElements.delete(src)
-  }, [audioElements])
-
-  const pauseAllAudio = useCallback(() => {
-    audioElements.forEach((element, src) => {
-      if (!element.paused) {
-        element.pause()
-      }
-    })
-    setIsPlaying(false)
-  }, [audioElements])
-
-  const playAudio = useCallback((src: string) => {
-    // First pause all other audio
-    pauseAllAudio()
-    
-    // Then play the selected audio
-    const element = audioElements.get(src)
-    if (element) {
-      element.currentTime = 0
-      element.play().then(() => {
-        setCurrentlyPlaying(src)
-        setIsPlaying(true)
-        setProgress(0)
-        setCurrentTime(0)
-      }).catch(console.error)
-    }
-  }, [audioElements, pauseAllAudio])
-
-  const pauseAudio = useCallback((src: string) => {
-    const element = audioElements.get(src)
-    if (element && !element.paused) {
-      element.pause()
-      setIsPlaying(false)
-    }
-  }, [audioElements])
-
-  return (
-    <AudioContext.Provider
-      value={{
-        currentlyPlaying,
-        isPlaying,
-        progress,
-        duration,
-        currentTime,
-        audioElements,
-        registerAudio,
-        unregisterAudio,
-        playAudio,
-        pauseAudio,
-        pauseAllAudio,
-        setProgress,
-        setDuration,
-        setCurrentTime,
-      }}
-    >
-      {children}
-    </AudioContext.Provider>
-  )
-}
-
-function useAudioContext() {
-  const context = useContext(AudioContext)
-  if (!context) {
-    throw new Error('useAudioContext must be used within an AudioProvider')
-  }
-  return context
 }
 
 const initFacebookPixel = () => {
@@ -601,161 +499,66 @@ const CustomSlider = ({
 const AudioPlayerCompact = ({
   src,
   title,
+  currentlyPlayingAudio,
+  setCurrentlyPlayingAudio,
+  onPlay,
+  isActuallyPlaying,
+  trackIndex,
+  currentTrackIndex,
 }: {
   src: string
   title?: string
+  currentlyPlayingAudio: string | null
+  setCurrentlyPlayingAudio: (src: string | null) => void
+  onPlay: () => void
+  isActuallyPlaying?: boolean
+  trackIndex?: number
+  currentTrackIndex?: number | null
 }) => {
-  const audioRef = useRef<HTMLAudioElement>(null)
-  const audioContext = useAudioContext()
-  const isCurrentlyPlaying = audioContext.currentlyPlaying === src
-  const isPlaying = isCurrentlyPlaying && audioContext.isPlaying
+  // MOST PRECISE APPROACH: Check both audio URL AND track index to ensure uniqueness
+  const isThisExactTrackPlaying = (
+    currentlyPlayingAudio !== null && 
+    currentlyPlayingAudio === src && 
+    isActuallyPlaying === true &&
+    trackIndex !== undefined &&
+    currentTrackIndex !== null &&
+    trackIndex === currentTrackIndex
+  )
 
-  // Register this audio element when component mounts
-  useEffect(() => {
-    if (audioRef.current) {
-      audioContext.registerAudio(src, audioRef.current)
-      
-      // Set up event listeners
-      const audioElement = audioRef.current
-      
-      const handleTimeUpdate = () => {
-        if (isCurrentlyPlaying && audioElement) {
-          const progress = (audioElement.currentTime / audioElement.duration) * 100
-          audioContext.setProgress(isFinite(progress) ? progress : 0)
-          audioContext.setDuration(audioElement.duration)
-          audioContext.setCurrentTime(audioElement.currentTime)
-        }
-      }
-      
-      const handleEnded = () => {
-        if (isCurrentlyPlaying) {
-          audioContext.pauseAllAudio()
-        }
-      }
-      
-      audioElement.addEventListener('timeupdate', handleTimeUpdate)
-      audioElement.addEventListener('ended', handleEnded)
-      
-      return () => {
-        audioElement.removeEventListener('timeupdate', handleTimeUpdate)
-        audioElement.removeEventListener('ended', handleEnded)
-        audioContext.unregisterAudio(src)
-      }
-    }
-  }, [src, isCurrentlyPlaying, audioContext])
-
-  const togglePlay = () => {
-    if (isCurrentlyPlaying && isPlaying) {
-      // Pause current track
-      audioContext.pauseAudio(src)
-    } else {
-      // Play this track (will automatically pause others)
-      audioContext.playAudio(src)
-    }
-  }
-
-  const formatTime = (time: number) => {
-    if (!isFinite(time)) return "0:00"
-    const minutes = Math.floor(time / 60)
-    const seconds = Math.floor(time % 60)
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`
+  const handlePlay = () => {
+    onPlay()
   }
 
   return (
-    <motion.div 
-      className="bg-[#282828] rounded-lg p-3 space-y-2 relative overflow-hidden"
-      animate={{
-        scale: isCurrentlyPlaying ? 1.08 : 1,
-        boxShadow: isCurrentlyPlaying 
-          ? "0 0 25px rgba(34, 197, 94, 0.6)"
-          : "0 0 0px rgba(34, 197, 94, 0)"
-      }}
-      transition={{ duration: 0.4, ease: "easeInOut" }}
-    >
-      {/* Animated background glow for currently playing */}
-      {isCurrentlyPlaying && (
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-r from-green-500/10 via-green-400/5 to-green-500/10 rounded-lg"
-          animate={{
-            opacity: [0.3, 0.6, 0.3],
-          }}
-          transition={{
-            duration: 2,
-            repeat: Number.POSITIVE_INFINITY,
-            ease: "easeInOut"
-          }}
-        />
-      )}
-      
-      <audio ref={audioRef} src={src} className="hidden" />
-      
-      {/* Progress Bar */}
-      <div className="w-full bg-[#404040] rounded-full h-1 relative z-10">
-        <motion.div 
-          className="bg-green-500 h-1 rounded-full"
-          style={{ width: `${isCurrentlyPlaying ? audioContext.progress : 0}%` }}
-          animate={{
-            boxShadow: isCurrentlyPlaying && isPlaying 
-              ? "0 0 8px rgba(34, 197, 94, 0.8)"
-              : "0 0 0px rgba(34, 197, 94, 0)"
-          }}
-          transition={{ duration: 0.1 }}
+    <div className="bg-[#282828] rounded-lg p-3 space-y-2">
+      {/* Progress Bar - Shows active state only when this exact track is playing */}
+      <div className="w-full bg-[#404040] rounded-full h-1">
+        <div 
+          className={`h-1 rounded-full transition-all duration-300 ${
+            isThisExactTrackPlaying ? 'bg-green-500 animate-pulse' : 'bg-gray-600'
+          }`}
+          style={{ width: isThisExactTrackPlaying ? '100%' : '0%' }}
         />
       </div>
       
       {/* Controls */}
-      <div className="flex items-center justify-between relative z-10">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <motion.div
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
+          <Button
+            onClick={handlePlay}
+            variant="ghost"
+            size="icon"
+            className={`text-white h-8 w-8 rounded-full transition-all duration-300 ${
+              isThisExactTrackPlaying 
+                ? 'bg-green-500 hover:bg-green-600 scale-110 shadow-lg shadow-green-500/30' 
+                : 'bg-green-500 hover:bg-green-600 hover:scale-105'
+            }`}
           >
-            <Button
-              onClick={togglePlay}
-              variant="ghost"
-              size="icon"
-              className="text-white hover:bg-green-600 h-8 w-8 rounded-full bg-green-500 relative"
-            >
-              {isPlaying ? (
-                <motion.div
-                  key="pause"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <Pause className="h-3 w-3" />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="play"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <Play className="h-3 w-3" />
-                </motion.div>
-              )}
-              
-              {/* Animated ring for currently playing */}
-              {isCurrentlyPlaying && isPlaying && (
-                <motion.div
-                  className="absolute inset-0 border-2 border-green-400 rounded-full"
-                  animate={{
-                    scale: [1, 1.3, 1],
-                    opacity: [0.8, 0, 0.8],
-                  }}
-                  transition={{
-                    duration: 1.5,
-                    repeat: Number.POSITIVE_INFINITY,
-                    ease: "easeInOut"
-                  }}
-                />
-              )}
-            </Button>
-          </motion.div>
-          <span className="text-gray-400 text-xs">
-            {isCurrentlyPlaying ? formatTime(audioContext.duration) : "0:00"}
-          </span>
+            {isThisExactTrackPlaying ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+          </Button>
+          <span className={`text-xs transition-colors duration-300 ${
+            isThisExactTrackPlaying ? 'text-green-400' : 'text-gray-400'
+          }`}>0:02</span>
         </div>
         <Button
           variant="ghost"
@@ -765,27 +568,7 @@ const AudioPlayerCompact = ({
           <Volume2 className="h-3 w-3" />
         </Button>
       </div>
-      
-      {/* Currently playing indicator */}
-      {isCurrentlyPlaying && (
-        <motion.div
-          className="absolute top-1 right-1 z-20"
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.3 }}
-        >
-          <div className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
-            <motion.div
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY }}
-            >
-              <Music className="h-3 w-3" />
-            </motion.div>
-            Playing
-          </div>
-        </motion.div>
-      )}
-    </motion.div>
+    </div>
   )
 }
 
@@ -799,164 +582,65 @@ const AudioPlayer = ({
   title?: string
 }) => {
   const audioRef = useRef<HTMLAudioElement>(null)
-  const audioContext = useAudioContext()
-  const isCurrentlyPlaying = audioContext.currentlyPlaying === src
-  const isPlaying = isCurrentlyPlaying && audioContext.isPlaying
-
-  // Register this audio element when component mounts
-  useEffect(() => {
-    if (audioRef.current) {
-      audioContext.registerAudio(src, audioRef.current)
-      
-      // Set up event listeners
-      const audioElement = audioRef.current
-      
-      const handleTimeUpdate = () => {
-        if (isCurrentlyPlaying && audioElement) {
-          const progress = (audioElement.currentTime / audioElement.duration) * 100
-          audioContext.setProgress(isFinite(progress) ? progress : 0)
-          audioContext.setDuration(audioElement.duration)
-          audioContext.setCurrentTime(audioElement.currentTime)
-        }
-      }
-      
-      const handleEnded = () => {
-        if (isCurrentlyPlaying) {
-          audioContext.pauseAllAudio()
-        }
-      }
-      
-      audioElement.addEventListener('timeupdate', handleTimeUpdate)
-      audioElement.addEventListener('ended', handleEnded)
-      
-      return () => {
-        audioElement.removeEventListener('timeupdate', handleTimeUpdate)
-        audioElement.removeEventListener('ended', handleEnded)
-        audioContext.unregisterAudio(src)
-      }
-    }
-  }, [src, isCurrentlyPlaying, audioContext])
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
 
   const togglePlay = () => {
-    if (isCurrentlyPlaying && isPlaying) {
-      // Pause current track
-      audioContext.pauseAudio(src)
-    } else {
-      // Play this track (will automatically pause others)
-      audioContext.playAudio(src)
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause()
+      } else {
+        audioRef.current.play()
+      }
+      setIsPlaying(!isPlaying)
+    }
+  }
+
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      const progress = (audioRef.current.currentTime / audioRef.current.duration) * 100
+      setProgress(isFinite(progress) ? progress : 0)
+      setCurrentTime(audioRef.current.currentTime)
+      setDuration(audioRef.current.duration)
     }
   }
 
   const handleSeek = (value: number) => {
-    if (audioRef.current && audioRef.current.duration && isCurrentlyPlaying) {
+    if (audioRef.current && audioRef.current.duration) {
       const time = (value / 100) * audioRef.current.duration
       if (isFinite(time)) {
         audioRef.current.currentTime = time
-        audioContext.setProgress(value)
+        setProgress(value)
       }
     }
-  }
-
-  const formatTime = (time: number) => {
-    if (!isFinite(time)) return "0:00"
-    const minutes = Math.floor(time / 60)
-    const seconds = Math.floor(time % 60)
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`
   }
 
   return (
     <motion.div
       className="relative flex flex-col mx-auto rounded-3xl overflow-hidden bg-[#121212] backdrop-blur-sm shadow-2xl p-4 w-[320px] h-auto border border-green-500/20"
       initial={{ opacity: 0, y: 20 }}
-      animate={{ 
-        opacity: 1, 
-        y: 0,
-        scale: isCurrentlyPlaying ? 1.12 : 1,
-        boxShadow: isCurrentlyPlaying 
-          ? "0 0 35px rgba(34, 197, 94, 0.6)"
-          : "0 0 0px rgba(34, 197, 94, 0)"
-      }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      {/* Animated background glow for currently playing */}
-      {isCurrentlyPlaying && (
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-br from-green-500/20 via-green-400/10 to-green-500/20 rounded-3xl"
-          animate={{
-            opacity: [0.3, 0.6, 0.3],
-          }}
-          transition={{
-            duration: 2,
-            repeat: Number.POSITIVE_INFINITY,
-            ease: "easeInOut"
-          }}
-        />
-      )}
-      
-      <audio ref={audioRef} src={src} className="hidden" />
+      <audio ref={audioRef} onTimeUpdate={handleTimeUpdate} src={src} className="hidden" />
 
       {cover && (
         <div className="bg-gradient-to-br from-green-400/20 to-green-600/20 overflow-hidden rounded-2xl h-[200px] w-full relative mb-4">
           <img src={cover || "/placeholder.svg"} alt="cover" className="object-cover w-full h-full" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-          
-          {/* Currently playing overlay */}
-          {isCurrentlyPlaying && (
-            <motion.div
-              className="absolute inset-0 bg-green-500/20 flex items-center justify-center"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
-            >
-              <motion.div
-                className="bg-black/50 backdrop-blur-sm rounded-full p-3"
-                animate={{
-                  scale: [1, 1.1, 1],
-                }}
-                transition={{
-                  duration: 1.5,
-                  repeat: Number.POSITIVE_INFINITY,
-                  ease: "easeInOut"
-                }}
-              >
-                <Music className="h-6 w-6 text-green-400" />
-              </motion.div>
-            </motion.div>
-          )}
         </div>
       )}
 
-      <div className="flex flex-col w-full gap-y-3 relative z-10">
-        {title && (
-          <div className="flex items-center justify-between">
-            <h3 className="text-white font-bold text-lg text-center flex-1">{title}</h3>
-            {isCurrentlyPlaying && (
-              <motion.div
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.3 }}
-              >
-                <Badge className="bg-green-500/20 text-green-400 border-green-500/30 ml-2">
-                  Playing
-                </Badge>
-              </motion.div>
-            )}
-          </div>
-        )}
+      <div className="flex flex-col w-full gap-y-3">
+        {title && <h3 className="text-white font-bold text-lg text-center">{title}</h3>}
 
         <div className="flex flex-col gap-y-2">
-          <CustomSlider 
-            value={isCurrentlyPlaying ? audioContext.progress : 0} 
-            onChange={handleSeek} 
-            className="w-full" 
-          />
+          <CustomSlider value={progress} onChange={handleSeek} className="w-full" />
           <div className="flex items-center justify-between">
-            <span className="text-white/70 text-sm">
-              {isCurrentlyPlaying ? formatTime(audioContext.currentTime) : "0:00"}
-            </span>
-            <span className="text-white/70 text-sm">
-              {isCurrentlyPlaying ? formatTime(audioContext.duration) : "0:00"}
-            </span>
+            <span className="text-white/70 text-sm">{formatTime(currentTime)}</span>
+            <span className="text-white/70 text-sm">{formatTime(duration)}</span>
           </div>
         </div>
 
@@ -968,53 +652,14 @@ const AudioPlayer = ({
             <Button variant="ghost" size="icon" className="text-white hover:bg-[#404040] h-8 w-8 rounded-full">
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <motion.div
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
+            <Button
+              onClick={togglePlay}
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-green-600 h-10 w-10 rounded-full bg-green-500 border border-green-500"
             >
-              <Button
-                onClick={togglePlay}
-                variant="ghost"
-                size="icon"
-                className="text-white hover:bg-green-600 h-10 w-10 rounded-full bg-green-500 border border-green-500 relative"
-              >
-                {isPlaying ? (
-                  <motion.div
-                    key="pause"
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <Pause className="h-5 w-5" />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="play"
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <Play className="h-5 w-5" />
-                  </motion.div>
-                )}
-                
-                {/* Animated ring for currently playing */}
-                {isCurrentlyPlaying && isPlaying && (
-                  <motion.div
-                    className="absolute inset-0 border-2 border-green-400 rounded-full"
-                    animate={{
-                      scale: [1, 1.4, 1],
-                      opacity: [0.8, 0, 0.8],
-                    }}
-                    transition={{
-                      duration: 2,
-                      repeat: Number.POSITIVE_INFINITY,
-                      ease: "easeInOut"
-                    }}
-                  />
-                )}
-              </Button>
-            </motion.div>
+              {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+            </Button>
             <Button variant="ghost" size="icon" className="text-white hover:bg-[#404040] h-8 w-8 rounded-full">
               <ArrowRight className="h-4 w-4" />
             </Button>
@@ -1118,7 +763,7 @@ const FloatingNotes = () => {
             delay: i * 3,
             ease: "linear",
           }}
-        >
+        >  
           {i % 3 === 0 ? "♪" : i % 3 === 1 ? "♫" : "♬"}
         </motion.div>
       ))}
@@ -1126,11 +771,283 @@ const FloatingNotes = () => {
   )
 }
 
-const SpotifyLandingPageInner = () => {
+const BottomAudioPlayer = ({
+  track,
+  trackIndex,
+  allTracks,
+  onNext,
+  onPrev,
+  onClose,
+  onPlayingStateChange,
+}: {
+  track: any
+  trackIndex: number
+  allTracks: any[]
+  onNext: () => void
+  onPrev: () => void
+  onClose: () => void
+  onPlayingStateChange?: (isPlaying: boolean) => void
+}) => {
+  const audioRef = useRef<HTMLAudioElement>(null)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const [currentTime, setCurrentTime] = useState(0)
+
+  useEffect(() => {
+    if (audioRef.current) {
+      // Reset audio to beginning and start playing new track
+      audioRef.current.currentTime = 0
+      setProgress(0)
+      setCurrentTime(0)
+      audioRef.current.play().then(() => {
+        setIsPlaying(true)
+        onPlayingStateChange?.(true)
+      }).catch(error => {
+        console.error("Audio play failed:", error)
+        setIsPlaying(false)
+        onPlayingStateChange?.(false)
+      })
+    }
+  }, [track])
+
+  const togglePlay = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause()
+        setIsPlaying(false)
+        onPlayingStateChange?.(false)
+      } else {
+        audioRef.current.play()
+        setIsPlaying(true)
+        onPlayingStateChange?.(true)
+      }
+    }
+  }
+
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      const progress = (audioRef.current.currentTime / audioRef.current.duration) * 100
+      setProgress(isFinite(progress) ? progress : 0)
+      setDuration(audioRef.current.duration)
+      setCurrentTime(audioRef.current.currentTime)
+    }
+  }
+
+  const handleSeek = (value: number) => {
+    if (audioRef.current && audioRef.current.duration) {
+      const time = (value / 100) * audioRef.current.duration
+      if (isFinite(time)) {
+        audioRef.current.currentTime = time
+        setProgress(value)
+      }
+    }
+  }
+
+  const formatTime = (time: number) => {
+    if (!isFinite(time)) return "0:00"
+    const minutes = Math.floor(time / 60)
+    const seconds = Math.floor(time % 60)
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`
+  }
+
+  const handleEnded = () => {
+    if (trackIndex < allTracks.length - 1) {
+      onNext()
+    } else {
+      setIsPlaying(false)
+      setProgress(0)
+      setCurrentTime(0)
+      onPlayingStateChange?.(false)
+    }
+  }
+
+  return (
+    <motion.div
+      initial={{ y: 100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: 100, opacity: 0 }}
+      className="fixed bottom-0 left-0 right-0 z-50 bg-[#181818] border-t border-[#282828] p-4"
+    >
+      <audio
+        ref={audioRef}
+        src={track.audio_url}
+        onTimeUpdate={handleTimeUpdate}
+        onEnded={handleEnded}
+        className="hidden"
+      />
+      
+      <div className="max-w-6xl mx-auto">
+        {/* Mobile Layout */}
+        <div className="md:hidden space-y-3">
+          <div className="flex items-center gap-3">
+            <img
+              src={track.cover_image_url || '/placeholder.svg'}
+              alt={track.title}
+              className="w-12 h-12 rounded-lg object-cover"
+            />
+            <div className="flex-1 min-w-0">
+              <h4 className="text-white font-medium truncate">{track.title}</h4>
+              <p className="text-gray-400 text-sm truncate">{track.business_type || 'Jingle Sample'}</p>
+            </div>
+            <Button
+              onClick={onClose}
+              variant="ghost"
+              size="icon"
+              className="text-gray-400 hover:text-white h-8 w-8"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <div className="space-y-2">
+            <div className="w-full bg-[#404040] rounded-full h-1 cursor-pointer"
+                 onClick={(e) => {
+                   const rect = e.currentTarget.getBoundingClientRect()
+                   const x = e.clientX - rect.left
+                   const percentage = (x / rect.width) * 100
+                   handleSeek(Math.min(Math.max(percentage, 0), 100))
+                 }}>
+              <div 
+                className="bg-green-500 h-1 rounded-full transition-all duration-100"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <div className="flex justify-between text-xs text-gray-400">
+              <span>{formatTime(currentTime)}</span>
+              <span>{formatTime(duration)}</span>
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-center gap-4">
+            <Button
+              onClick={() => {
+                console.log('Prev button clicked, trackIndex:', trackIndex)
+                onPrev()
+              }}
+              disabled={trackIndex === 0}
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-[#404040] h-10 w-10 rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            
+            <Button
+              onClick={togglePlay}
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-green-600 h-12 w-12 rounded-full bg-green-500"
+            >
+              {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
+            </Button>
+            
+            <Button
+              onClick={() => {
+                console.log('Next button clicked, trackIndex:', trackIndex, 'allTracks.length:', allTracks.length)
+                onNext()
+              }}
+              disabled={trackIndex === allTracks.length - 1}
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-[#404040] h-10 w-10 rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ArrowRight className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+        
+        {/* Desktop Layout */}
+        <div className="hidden md:flex items-center gap-4">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <img
+              src={track.cover_image_url || '/placeholder.svg'}
+              alt={track.title}
+              className="w-14 h-14 rounded-lg object-cover"
+            />
+            <div className="min-w-0">
+              <h4 className="text-white font-medium truncate">{track.title}</h4>
+              <p className="text-gray-400 text-sm truncate">{track.business_type || 'Jingle Sample'}</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => {
+                console.log('Prev button clicked (desktop), trackIndex:', trackIndex)
+                onPrev()
+              }}
+              disabled={trackIndex === 0}
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-[#404040] h-8 w-8 rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            
+            <Button
+              onClick={togglePlay}
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-green-600 h-10 w-10 rounded-full bg-green-500"
+            >
+              {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+            </Button>
+            
+            <Button
+              onClick={() => {
+                console.log('Next button clicked (desktop), trackIndex:', trackIndex, 'allTracks.length:', allTracks.length)
+                onNext()
+              }}
+              disabled={trackIndex === allTracks.length - 1}
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-[#404040] h-8 w-8 rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <div className="flex items-center gap-2 flex-1 max-w-md">
+            <span className="text-gray-400 text-xs min-w-[40px]">{formatTime(currentTime)}</span>
+            <div className="flex-1 bg-[#404040] rounded-full h-1 cursor-pointer"
+                 onClick={(e) => {
+                   const rect = e.currentTarget.getBoundingClientRect()
+                   const x = e.clientX - rect.left
+                   const percentage = (x / rect.width) * 100
+                   handleSeek(Math.min(Math.max(percentage, 0), 100))
+                 }}>
+              <div 
+                className="bg-green-500 h-1 rounded-full transition-all duration-100"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <span className="text-gray-400 text-xs min-w-[40px]">{formatTime(duration)}</span>
+          </div>
+          
+          <Button
+            onClick={onClose}
+            variant="ghost"
+            size="icon"
+            className="text-gray-400 hover:text-white h-8 w-8"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+const SpotifyLandingPage = () => {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [jingleSamples, setJingleSamples] = useState<any[]>([])
   const [currentPage, setCurrentPage] = useState(0)
   const [isMobile, setIsMobile] = useState(false)
+  const [currentlyPlayingAudio, setCurrentlyPlayingAudio] = useState<string | null>(null)
+  const [currentTrackIndex, setCurrentTrackIndex] = useState<number | null>(null)
+  const [showBottomPlayer, setShowBottomPlayer] = useState(false)
+  const [isAudioActuallyPlaying, setIsAudioActuallyPlaying] = useState(false)
   const samplesPerPage = 4
   const mobilePerPage = 1
 
@@ -1213,7 +1130,59 @@ const SpotifyLandingPageInner = () => {
 
   useEffect(() => {
     fetchJingleSamples()
+    // Ensure audio playing state starts as false
+    setIsAudioActuallyPlaying(false)
   }, [])
+
+  // Auto-scroll to currently playing track on mobile (only when track starts playing)
+  useEffect(() => {
+    if (currentTrackIndex !== null && isMobile && isAudioActuallyPlaying) {
+      const targetPage = Math.floor(currentTrackIndex / currentSamplesPerPage)
+      if (targetPage !== currentPage) {
+        console.log('Auto-scrolling to track page:', targetPage, 'from current page:', currentPage)
+        setCurrentPage(targetPage)
+      }
+    }
+  }, [currentTrackIndex, isMobile, currentSamplesPerPage, isAudioActuallyPlaying])
+
+  const playTrack = (trackIndex: number) => {
+    // Reset all audio states first to ensure clean state
+    setIsAudioActuallyPlaying(false)
+    setCurrentTrackIndex(trackIndex)
+    setCurrentlyPlayingAudio(jingleSamples[trackIndex].audio_url)
+    setShowBottomPlayer(true)
+  }
+
+  const handleNext = () => {
+    if (currentTrackIndex !== null && currentTrackIndex < jingleSamples.length - 1) {
+      const nextIndex = currentTrackIndex + 1
+      // Always reset the playing state when switching tracks
+      setIsAudioActuallyPlaying(false)
+      setCurrentTrackIndex(nextIndex)
+      setCurrentlyPlayingAudio(jingleSamples[nextIndex].audio_url)
+      // Ensure bottom player stays open
+      setShowBottomPlayer(true)
+    }
+  }
+
+  const handlePrev = () => {
+    if (currentTrackIndex !== null && currentTrackIndex > 0) {
+      const prevIndex = currentTrackIndex - 1
+      // Always reset the playing state when switching tracks
+      setIsAudioActuallyPlaying(false)
+      setCurrentTrackIndex(prevIndex)
+      setCurrentlyPlayingAudio(jingleSamples[prevIndex].audio_url)
+      // Ensure bottom player stays open
+      setShowBottomPlayer(true)
+    }
+  }
+
+  const handleClosePlayer = () => {
+    setShowBottomPlayer(false)
+    setCurrentTrackIndex(null)
+    setCurrentlyPlayingAudio(null)
+    setIsAudioActuallyPlaying(false)
+  }
 
   return (
     <div className="min-h-screen bg-[#121212] text-white overflow-hidden relative">
@@ -1594,34 +1563,49 @@ Tapi bukan cuma seru — jingle bikin usaha kamu lebih gampang diingat, lebih di
             <span className="text-white text-sm">
               {currentPage + 1} dari {totalPages}
             </span>
+            <span className="text-green-400 text-xs ml-2">
+              (Debug: currentPage={currentPage}, totalPages={totalPages})
+            </span>
           </div>
 
           {/* Cards Container with Side Navigation */}
-          <div className="relative">
+          <div className="relative pointer-events-none">
             {/* Left Navigation Button */}
             <Button
               variant="outline"
               size="icon"
-              onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                const newPage = Math.max(0, currentPage - 1)
+                console.log('Page nav prev clicked, currentPage:', currentPage, 'newPage:', newPage)
+                setCurrentPage(newPage)
+              }}
               disabled={currentPage === 0}
-              className="absolute left-4 md:-left-16 top-1/2 transform -translate-y-1/2 z-20 border-green-500 text-green-400 hover:bg-green-500/10 disabled:opacity-50 disabled:cursor-not-allowed bg-black/80 backdrop-blur-sm px-3 md:px-4 py-3 md:py-4 hover:scale-[1.02] shadow-lg"
+              className="absolute left-2 md:-left-16 top-1/2 transform -translate-y-1/2 z-[70] border-2 border-green-500 text-green-400 hover:bg-green-500/20 disabled:opacity-30 disabled:cursor-not-allowed bg-black/95 backdrop-blur-sm px-4 py-4 hover:scale-110 shadow-xl transition-all duration-200 min-h-[52px] min-w-[52px] touch-manipulation rounded-lg pointer-events-auto"
             >
-              <ArrowLeft className="h-4 w-4 md:h-5 md:w-5" />
+              <ArrowLeft className="h-6 w-6" />
             </Button>
 
             {/* Right Navigation Button */}
             <Button
               variant="outline"
               size="icon"
-              onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                const newPage = Math.min(totalPages - 1, currentPage + 1)
+                console.log('Page nav next clicked, currentPage:', currentPage, 'newPage:', newPage, 'totalPages:', totalPages)
+                setCurrentPage(newPage)
+              }}
               disabled={currentPage >= totalPages - 1}
-              className="absolute right-4 md:-right-16 top-1/2 transform -translate-y-1/2 z-20 border-green-500 text-green-400 hover:bg-green-500/10 disabled:opacity-50 disabled:cursor-not-allowed bg-black/80 backdrop-blur-sm px-3 md:px-4 py-3 md:py-4 hover:scale-[1.02] shadow-lg"
+              className="absolute right-2 md:-right-16 top-1/2 transform -translate-y-1/2 z-[70] border-2 border-green-500 text-green-400 hover:bg-green-500/20 disabled:opacity-30 disabled:cursor-not-allowed bg-black/95 backdrop-blur-sm px-4 py-4 hover:scale-110 shadow-xl transition-all duration-200 min-h-[52px] min-w-[52px] touch-manipulation rounded-lg pointer-events-auto"
             >
-              <ArrowRight className="h-4 w-4 md:h-5 md:w-5" />
+              <ArrowRight className="h-6 w-6" />
             </Button>
 
             {/* Mobile Carousel Layout */}
-            <div className="md:hidden relative h-[420px] overflow-hidden">
+            <div className="md:hidden relative h-[420px] overflow-visible px-6 pointer-events-auto">
               <motion.div 
                 className="flex items-center justify-center h-full relative"
                 key={currentPage}
@@ -1656,18 +1640,18 @@ Tapi bukan cuma seru — jingle bikin usaha kamu lebih gampang diingat, lebih di
                         {/* Background cards for depth effect */}
                         {currentPage > 0 && (
                           <motion.div
-                            className="absolute -left-8 top-2"
+                            className="absolute -left-6 top-2"
                             style={{ zIndex: 1 }}
                             initial={{ x: -20, opacity: 0 }}
                             animate={{ x: 0, opacity: 0.3, scale: 0.85 }}
                             transition={{ delay: 0.3, duration: 0.5 }}
                           >
-                            <Card className="bg-[#1a1a1a] border-green-500/10 w-[240px] transform rotate-[-5deg]">
-                              <div className="p-4">
-                                <div className="bg-gradient-to-br from-green-400/10 to-green-600/10 rounded-xl h-[140px] w-full mb-3" />
+                            <Card className="bg-[#1a1a1a] border-green-500/10 w-[200px] transform rotate-[-5deg]">
+                              <div className="p-3">
+                                <div className="bg-gradient-to-br from-green-400/10 to-green-600/10 rounded-xl h-[120px] w-full mb-3" />
                                 <div className="space-y-2">
-                                  <div className="h-4 bg-gray-700 rounded w-3/4" />
-                                  <div className="h-3 bg-gray-800 rounded w-1/2" />
+                                  <div className="h-3 bg-gray-700 rounded w-3/4" />
+                                  <div className="h-2 bg-gray-800 rounded w-1/2" />
                                 </div>
                               </div>
                             </Card>
@@ -1677,18 +1661,18 @@ Tapi bukan cuma seru — jingle bikin usaha kamu lebih gampang diingat, lebih di
                         {/* Next card hint */}
                         {currentPage < totalPages - 1 && (
                           <motion.div
-                            className="absolute -right-8 top-2"
+                            className="absolute -right-6 top-2"
                             style={{ zIndex: 1 }}
                             initial={{ x: 20, opacity: 0 }}
                             animate={{ x: 0, opacity: 0.3, scale: 0.85 }}
                             transition={{ delay: 0.3, duration: 0.5 }}
                           >
-                            <Card className="bg-[#1a1a1a] border-green-500/10 w-[240px] transform rotate-[5deg]">
-                              <div className="p-4">
-                                <div className="bg-gradient-to-br from-green-400/10 to-green-600/10 rounded-xl h-[140px] w-full mb-3" />
+                            <Card className="bg-[#1a1a1a] border-green-500/10 w-[200px] transform rotate-[5deg]">
+                              <div className="p-3">
+                                <div className="bg-gradient-to-br from-green-400/10 to-green-600/10 rounded-xl h-[120px] w-full mb-3" />
                                 <div className="space-y-2">
-                                  <div className="h-4 bg-gray-700 rounded w-3/4" />
-                                  <div className="h-3 bg-gray-800 rounded w-1/2" />
+                                  <div className="h-3 bg-gray-700 rounded w-3/4" />
+                                  <div className="h-2 bg-gray-800 rounded w-1/2" />
                                 </div>
                               </div>
                             </Card>
@@ -1699,8 +1683,16 @@ Tapi bukan cuma seru — jingle bikin usaha kamu lebih gampang diingat, lebih di
                         <motion.div
                           whileHover={{ scale: 1.05, y: -5 }}
                           transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                          className="mx-3"
                         >
-                          <Card className="bg-[#1a1a1a] border-green-500/20 hover:border-green-500/40 transition-all duration-300 overflow-hidden group hover:shadow-xl hover:shadow-green-500/10 w-[300px] relative z-10">
+                          <Card className={`bg-[#1a1a1a] overflow-hidden group transition-all duration-500 w-full max-w-[280px] mx-auto relative z-10 ${
+                            currentlyPlayingAudio !== null && 
+                            currentlyPlayingAudio === sample.audio_url && 
+                            isAudioActuallyPlaying === true &&
+                            currentTrackIndex === jingleSamples.indexOf(sample)
+                              ? 'border-2 border-green-500 shadow-2xl shadow-green-500/30 scale-105' 
+                              : 'border-green-500/20 hover:border-green-500/40 hover:shadow-xl hover:shadow-green-500/10'
+                          }`}>
                             <div className="p-4">
                               {/* Cover Image */}
                               <div className="bg-gradient-to-br from-green-400/20 to-green-600/20 overflow-hidden rounded-xl h-[180px] w-full relative mb-4">
@@ -1715,6 +1707,23 @@ Tapi bukan cuma seru — jingle bikin usaha kamu lebih gampang diingat, lebih di
                                     {sample.business_type || 'Umum'}
                                   </Badge>
                                 </div>
+                                
+                                {/* Now Playing Indicator */}
+                                {currentlyPlayingAudio !== null && 
+                                 currentlyPlayingAudio === sample.audio_url && 
+                                 isAudioActuallyPlaying === true &&
+                                 currentTrackIndex === jingleSamples.indexOf(sample) && (
+                                  <motion.div
+                                    initial={{ scale: 0, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    className="absolute top-2 left-2"
+                                  >
+                                    <Badge className="bg-green-500 text-white text-xs px-2 py-1 flex items-center gap-1">
+                                      <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                                      Now Playing
+                                    </Badge>
+                                  </motion.div>
+                                )}
                               </div>
                               
                               {/* Content */}
@@ -1728,6 +1737,12 @@ Tapi bukan cuma seru — jingle bikin usaha kamu lebih gampang diingat, lebih di
                                 <AudioPlayerCompact 
                                   src={sample.audio_url} 
                                   title={sample.title}
+                                  currentlyPlayingAudio={currentlyPlayingAudio}
+                                  setCurrentlyPlayingAudio={setCurrentlyPlayingAudio}
+                                  onPlay={() => playTrack(jingleSamples.indexOf(sample))}
+                                  isActuallyPlaying={isAudioActuallyPlaying}
+                                  trackIndex={jingleSamples.indexOf(sample)}
+                                  currentTrackIndex={currentTrackIndex}
                                 />
                               </div>
                             </div>
@@ -1741,7 +1756,7 @@ Tapi bukan cuma seru — jingle bikin usaha kamu lebih gampang diingat, lebih di
             </div>
 
             {/* Desktop Grid Layout */}
-            <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-6 pointer-events-auto">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={currentPage}
@@ -1775,7 +1790,14 @@ Tapi bukan cuma seru — jingle bikin usaha kamu lebih gampang diingat, lebih di
                         }}
                         className="flex justify-center"
                       >
-                        <Card className="bg-[#1a1a1a] border-green-500/20 hover:border-green-500/40 transition-all duration-300 overflow-hidden group hover:shadow-xl hover:shadow-green-500/10">
+                        <Card className={`bg-[#1a1a1a] overflow-hidden group transition-all duration-500 ${
+                          currentlyPlayingAudio !== null && 
+                          currentlyPlayingAudio === sample.audio_url && 
+                          isAudioActuallyPlaying === true &&
+                          currentTrackIndex === jingleSamples.indexOf(sample)
+                            ? 'border-2 border-green-500 shadow-2xl shadow-green-500/30 scale-105' 
+                            : 'border-green-500/20 hover:border-green-500/40 hover:shadow-xl hover:shadow-green-500/10'
+                        }`}>
                           <div className="p-4">
                             {/* Cover Image */}
                             <div className="bg-gradient-to-br from-green-400/20 to-green-600/20 overflow-hidden rounded-xl h-[160px] w-full relative mb-4">
@@ -1790,6 +1812,23 @@ Tapi bukan cuma seru — jingle bikin usaha kamu lebih gampang diingat, lebih di
                                   {sample.business_type || 'Umum'}
                                 </Badge>
                               </div>
+                              
+                              {/* Now Playing Indicator */}
+                              {currentlyPlayingAudio !== null && 
+                               currentlyPlayingAudio === sample.audio_url && 
+                               isAudioActuallyPlaying === true &&
+                               currentTrackIndex === jingleSamples.indexOf(sample) && (
+                                <motion.div
+                                  initial={{ scale: 0, opacity: 0 }}
+                                  animate={{ scale: 1, opacity: 1 }}
+                                  className="absolute top-2 left-2"
+                                >
+                                  <Badge className="bg-green-500 text-white text-xs px-2 py-1 flex items-center gap-1">
+                                    <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                                    Now Playing
+                                  </Badge>
+                                </motion.div>
+                              )}
                             </div>
                             
                             {/* Content */}
@@ -1803,6 +1842,12 @@ Tapi bukan cuma seru — jingle bikin usaha kamu lebih gampang diingat, lebih di
                               <AudioPlayerCompact 
                                 src={sample.audio_url} 
                                 title={sample.title}
+                                currentlyPlayingAudio={currentlyPlayingAudio}
+                                setCurrentlyPlayingAudio={setCurrentlyPlayingAudio}
+                                onPlay={() => playTrack(jingleSamples.indexOf(sample))}
+                                isActuallyPlaying={isAudioActuallyPlaying}
+                                trackIndex={jingleSamples.indexOf(sample)}
+                                currentTrackIndex={currentTrackIndex}
                               />
                             </div>
                           </div>
@@ -2065,17 +2110,23 @@ Tapi bukan cuma seru — jingle bikin usaha kamu lebih gampang diingat, lebih di
       </section>
 
       <MultiStepForm isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} />
+      
+      {/* Bottom Audio Player */}
+      <AnimatePresence>
+        {showBottomPlayer && currentTrackIndex !== null && (
+          <BottomAudioPlayer
+            track={jingleSamples[currentTrackIndex]}
+            trackIndex={currentTrackIndex}
+            allTracks={jingleSamples}
+            onNext={handleNext}
+            onPrev={handlePrev}
+            onClose={handleClosePlayer}
+            onPlayingStateChange={setIsAudioActuallyPlaying}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }
 
-// Wrap the main component with AudioProvider
-function WrappedSpotifyLandingPage() {
-  return (
-    <AudioProvider>
-      <SpotifyLandingPageInner />
-    </AudioProvider>
-  )
-}
-
-export default WrappedSpotifyLandingPage
+export default SpotifyLandingPage
