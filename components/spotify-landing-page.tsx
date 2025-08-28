@@ -1086,7 +1086,7 @@ const SpotifyLandingPage = () => {
         .from("jingle_samples")
         .select("*")
         .limit(12)
-        .order("created_at", { ascending: false })
+        .order("random()") // Use PostgreSQL random() function for database-level randomization
 
       if (error) {
         console.error("Error fetching jingle samples:", error)
@@ -1585,9 +1585,32 @@ const SpotifyLandingPage = () => {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-8">
-              Dengerin Dulu Contoh Jingle Kita <span className="text-green-400">🎧</span>
-            </h2>
+            <div className="flex items-center justify-center gap-4 mb-8">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold">
+                Dengerin Dulu Contoh Jingle Kita <span className="text-green-400">🎧</span>
+              </h2>
+              <motion.button
+                onClick={() => {
+                  // Reset audio player state and pagination
+                  setCurrentlyPlayingAudio(null)
+                  setCurrentTrackIndex(null)
+                  setShowBottomPlayer(false)
+                  setIsAudioActuallyPlaying(false)
+                  setCurrentPage(0)
+                  
+                  // Fetch new random samples
+                  fetchJingleSamples()
+                }}
+                className="bg-green-500/20 hover:bg-green-500/30 border border-green-500/50 hover:border-green-400 text-green-400 p-2 sm:p-3 rounded-full transition-all duration-300 group hover:scale-110 hover:shadow-lg hover:shadow-green-500/25"
+                whileHover={{ scale: 1.1, rotate: 180 }}
+                whileTap={{ scale: 0.9 }}
+                title="Refresh untuk mendapatkan jingle acak baru"
+              >
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 group-hover:text-green-300 transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </motion.button>
+            </div>
             <p className="text-lg text-gray-400 mb-8">
               Pilih dari {jingleSamples.length} contoh jingle berkualitas untuk berbagai jenis usaha
             </p>
