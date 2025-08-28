@@ -1305,9 +1305,20 @@ const SpotifyLandingPage = () => {
             <Button
               variant="outline"
               size="lg"
-              className="border-green-500 text-green-400 hover:bg-green-500/10 px-8 sm:px-10 py-4 sm:py-5 text-lg sm:text-xl rounded-full bg-transparent w-full sm:w-auto hover:border-green-400 transition-all duration-300 transform hover:scale-105"
+              onClick={() => {
+                if (jingleSectionRef.current) {
+                  jingleSectionRef.current.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center' 
+                  })
+                }
+              }}
+              className="border-green-500 text-green-400 hover:bg-green-500/20 hover:shadow-lg hover:shadow-green-500/25 px-8 sm:px-10 py-4 sm:py-5 text-lg sm:text-xl rounded-full bg-transparent w-full sm:w-auto hover:border-green-300 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 group"
             >
-              🎧 Dengar Contoh Jingle
+              <span className="flex items-center gap-2">
+                <span className="group-hover:animate-pulse">🎧</span>
+                <span>Dengar Contoh Jingle</span>
+              </span>
             </Button>
           </motion.div>
 
