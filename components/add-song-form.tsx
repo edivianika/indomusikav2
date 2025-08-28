@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { createClient } from '@/lib/supabase/client'
-import { createJingleSample, uploadFile, type JingleSampleData } from '@/lib/jingle-actions'
+import { createJingleSampleFromForm } from '@/lib/jingle-actions'
 
 interface FormData {
   title: string
@@ -79,70 +79,24 @@ export function AddSongForm() {
     })
 
     try {
-      // Generate unique file paths
-      const timestamp = Date.now()
-      const randomId = Math.random().toString(36).substring(2, 8)
-      const audioFileName = `${timestamp}-${randomId}-${formData.audio_file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
-      const audioPath = `jingles/${audioFileName}`
+      // Create FormData for server action
+      const form = new FormData()
+      form.append('title', formData.title)
+      form.append('description', formData.description)
+      form.append('business_type', formData.business_type)
+      form.append('audio_file', formData.audio_file)
       
-      let imagePath = null
-      let imageFileName = null
       if (formData.cover_image_file) {
-        imageFileName = `${timestamp}-${randomId}-${formData.cover_image_file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
-        imagePath = `covers/${imageFileName}`
+        form.append('cover_image_file', formData.cover_image_file)
       }
 
-      // Upload audio file using server action
-      setUploadState(prev => ({ ...prev, progress: 30, message: 'Mengupload file audio...' }))
-      const audioUploadResult = await uploadFile(formData.audio_file, 'jingle-files', audioPath)
+      setUploadState(prev => ({ ...prev, progress: 30, message: 'Mengupload file...' }))
       
-      if (!audioUploadResult.success) {
-        // Try fallback to public bucket if jingle-files doesn't exist
-        const fallbackResult = await uploadFile(formData.audio_file, 'public', `public/${audioPath}`)
-        if (!fallbackResult.success) {
-          throw new Error(`Audio upload failed: ${audioUploadResult.error}`)
-        }
-      }
-
-      const audioUrl = audioUploadResult.success ? audioUploadResult.url : ''
-      
-      if (!audioUrl) {
-        throw new Error('Failed to get audio URL after upload')
-      }
-
-      // Upload cover image if provided
-      let coverImageUrl = null
-      if (formData.cover_image_file && imagePath) {
-        setUploadState(prev => ({ ...prev, progress: 60, message: 'Mengupload gambar cover...' }))
-        
-        const imageUploadResult = await uploadFile(formData.cover_image_file, 'jingle-files', imagePath)
-        
-        if (imageUploadResult.success) {
-          coverImageUrl = imageUploadResult.url
-        } else {
-          // Try fallback for image as well
-          const fallbackImageResult = await uploadFile(formData.cover_image_file, 'public', `public/${imagePath}`)
-          if (fallbackImageResult.success) {
-            coverImageUrl = fallbackImageResult.url
-          }
-        }
-      }
-
-      // Save to database using server action
-      setUploadState(prev => ({ ...prev, progress: 80, message: 'Menyimpan ke database...' }))
-      
-      const jingleData: JingleSampleData = {
-        title: formData.title,
-        description: formData.description || undefined,
-        business_type: formData.business_type || undefined,
-        audio_url: audioUrl,
-        cover_image_url: coverImageUrl || undefined
-      }
-
-      const result = await createJingleSample(jingleData)
+      // Use the new FormData-based server action
+      const result = await createJingleSampleFromForm(form)
 
       if (!result.success) {
-        throw new Error(`Database error: ${result.error}`)
+        throw new Error(result.error || 'Upload failed')
       }
 
       setUploadState({
