@@ -1679,7 +1679,7 @@ const SpotifyLandingPage = () => {
             className="text-center mb-16"
           >
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-8">
-              Dengerin Dulu Contoh Jingle Kita <span className="text-green-400">🎧</span>
+              Dengarkan Jingle Mereka yg sudah sukses <span className="text-green-400">🎧</span>
             </h2>
             {isLoadingSamples ? (
               <div className="flex items-center justify-center gap-2 text-lg text-gray-400 mb-8">
@@ -1688,7 +1688,7 @@ const SpotifyLandingPage = () => {
               </div>
             ) : (
               <p className="text-lg text-gray-400 mb-8">
-                Pilih dari {jingleSamples.length} contoh jingle berkualitas untuk berbagai jenis usaha
+                {jingleSamples.length} contoh jingle berkualitas untuk berbagai jenis usaha
               </p>
             )}
           </motion.div>
@@ -2276,7 +2276,7 @@ const SpotifyLandingPage = () => {
       <section className="bg-gradient-to-b from-black to-gray-900">
         <div className="text-center pt-12 pb-4">
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            Kata Mereka yang Udah Coba <span className="text-green-400">👇</span>
+          Mereka sudah naik kelas berkat jingle kami. <br></br>Kini giliran bisnismu! <span className="text-green-400">👇</span>
           </h2>
         </div>
         <AnimatedTestimonials />
