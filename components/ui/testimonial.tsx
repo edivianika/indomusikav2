@@ -20,28 +20,98 @@ const testimonials = [
       "Nggak nyangka harga segini bisa dapet hasil sekeren ini. Prosesnya cepat & gampang, tim Indomusika sangat profesional.",
     name: "Pak Budi",
     designation: "Pemilik Laundry Express",
-    src: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=500&h=500&fit=crop&crop=face",
+    src: "https://xywntlseipqsncywliib.supabase.co/storage/v1/object/public/jingle-files/avatar/pakbudi.png",
   },
   {
     quote:
       "Jingle dari Indomusika bikin warung sembako aku jadi lebih dikenal. Omzet naik 30% setelah pakai jingle mereka!",
     name: "Ibu Sari",
     designation: "Pemilik Warung Sembako Amanah",
-    src: "https://images.unsplash.com/photo-1607990281513-2c110a25bd8c?w=500&h=500&fit=crop&crop=face",
+    src: "https://xywntlseipqsncywliib.supabase.co/storage/v1/object/public/jingle-files/avatar/ibu%20sari.png",
   },
   {
     quote:
       "Pelanggan sekarang lebih mudah inget bengkel aku. Jinglenya catchy banget dan sesuai sama karakter usaha bengkel motor.",
     name: "Mas Joko",
     designation: "Pemilik Bengkel Motor Jaya",
-    src: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&h=500&fit=crop&crop=face",
+    src: "https://xywntlseipqsncywliib.supabase.co/storage/v1/object/public/jingle-files/avatar/masjoko.png",
   },
   {
     quote:
       "Klien salon aku sering bilang jinglenya bagus dan mudah diingat. Investasi terbaik untuk branding usaha kecantikan!",
     name: "Mbak Dewi",
     designation: "Pemilik Salon Cantik Indah",
-    src: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=500&h=500&fit=crop&crop=face",
+    src: "https://xywntlseipqsncywliib.supabase.co/storage/v1/object/public/jingle-files/avatar/mbakdewi.png",
+  },
+  {
+    quote:
+      "Wah, sejak pake jingle ini, toko roti saya rame terus! Anak-anak kecil sampai hafal lagunya. Marketing yang efektif banget deh.",
+    name: "Pak Andre",
+    designation: "Pemilik Toko Roti Manis",
+    src: "https://xywntlseipqsncywliib.supabase.co/storage/v1/object/public/jingle-files/avatar/pakandre.png",
+  },
+  {
+    quote:
+      "Mantap betul! Jinglenya pas banget sama konsep warung makan keluarga. Customer jadi lebih kenal brand kita.",
+    name: "Bu Fitri",
+    designation: "Pemilik Warung Nasi Gudeg Jogja",
+    src: "https://xywntlseipqsncywliib.supabase.co/storage/v1/object/public/jingle-files/avatar/bufitri.png",
+  },
+  {
+    quote:
+      "Gokil sih ini! Jingle barbershop gue jadi viral di TikTok. Banyak yang dateng cuma karena penasaran sama lagunya.",
+    name: "Bang Rico",
+    designation: "Pemilik Barbershop Urban",
+    src: "https://xywntlseipqsncywliib.supabase.co/storage/v1/object/public/jingle-files/avatar/bangriko.png",
+  },
+  {
+    quote:
+      "Alhamdulillah, berkat jingle ini usaha catering saya jadi lebih dikenal. Pesanan wedding meningkat drastis!",
+    name: "Ustadzah Ani",
+    designation: "Pemilik Catering Al-Barokah",
+    src: "https://xywntlseipqsncywliib.supabase.co/storage/v1/object/public/jingle-files/avatar/uani.png",
+  },
+  {
+    quote:
+      "Speechless! Gym kecil saya sekarang punya identitas yang kuat. Member baru nambah 50% dalam 3 bulan!",
+    name: "Coach Danny",
+    designation: "Pemilik Fitness Center Pro",
+    src: "https://xywntlseipqsncywliib.supabase.co/storage/v1/object/public/jingle-files/avatar/coachdani.png",
+  },
+  {
+    quote:
+      "Makasih Indomusika! Toko bunga kecil aku sekarang punya ciri khas. Jinglenya romantis banget, cocok sama produk.",
+    name: "Kak Luna",
+    designation: "Pemilik Florist Luna Garden",
+    src: "https://xywntlseipqsncywliib.supabase.co/storage/v1/object/public/jingle-files/avatar/kakluna.png",
+  },
+  {
+    quote:
+      "Ampun deh kreatifnya! Jingle untuk toko kelontong ini bikin pelanggan selalu inget. Penjualan naik signifikan.",
+    name: "Om Hendra",
+    designation: "Pemilik Toko Kelontong Berkah",
+    src: "https://xywntlseipqsncywliib.supabase.co/storage/v1/object/public/jingle-files/avatar/omhendra.png",
+  },
+  {
+    quote:
+      "Keren abis! Warung es cream saya jadi trending topic di grup WhatsApp komplek. Anak-anak pada nyanyi jinglenya.",
+    name: "Tante Maya",
+    designation: "Pemilik Es Cream Segar",
+    src: "https://xywntlseipqsncywliib.supabase.co/storage/v1/object/public/jingle-files/avatar/tantemaya.png",
+  },
+  {
+    quote:
+      "Subhanallah, usaha konveksi saya jadi lebih profesional dengan jingle ini. Client besar mulai percaya sama brand kita.",
+    name: "Pak Yusuf",
+    designation: "Pemilik Konveksi Mandiri Jaya",
+    src: "https://xywntlseipqsncywliib.supabase.co/storage/v1/object/public/jingle-files/avatar/pakyusuf.png",
+  },
+  {
+    quote:
+      "Amazing banget hasilnya! Toko sepatu online aku sekarang punya brand song yang memorable. Sales meningkat 40%!",
+    name: "Sis Jennifer",
+    designation: "Owner Online Shop ShoesLover",
+    src: "https://xywntlseipqsncywliib.supabase.co/storage/v1/object/public/jingle-files/avatar/sisjenifer.png",
   },
 ];
 
@@ -79,9 +149,13 @@ const AnimatedTestimonials = ({
 
   const isActive = (index: number) => index === active;
 
-  // Use consistent rotation values to avoid hydration mismatch
+  // Use consistent rotation values to avoid hydration mismatch - expanded for 15 testimonials
   const getRotation = (index: number) => {
-    const rotations = ['2deg', '-3deg', '4deg', '-1deg', '3deg'];
+    const rotations = [
+      '2deg', '-3deg', '4deg', '-1deg', '3deg', 
+      '-2deg', '5deg', '-4deg', '1deg', '-5deg',
+      '3deg', '-1deg', '2deg', '-3deg', '4deg'
+    ];
     return rotations[index % rotations.length];
   };
 

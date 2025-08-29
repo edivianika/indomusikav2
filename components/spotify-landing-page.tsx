@@ -505,6 +505,7 @@ const AudioPlayerCompact = ({
   isActuallyPlaying,
   trackIndex,
   currentTrackIndex,
+  duration,
 }: {
   src: string
   title?: string
@@ -514,6 +515,7 @@ const AudioPlayerCompact = ({
   isActuallyPlaying?: boolean
   trackIndex?: number
   currentTrackIndex?: number | null
+  duration?: number
 }) => {
   // MOST PRECISE APPROACH: Check both audio URL AND track index to ensure uniqueness
   const isThisExactTrackPlaying = (
@@ -558,7 +560,9 @@ const AudioPlayerCompact = ({
           </Button>
           <span className={`text-xs transition-colors duration-300 ${
             isThisExactTrackPlaying ? 'text-green-400' : 'text-gray-400'
-          }`}>0:02</span>
+          }`}>
+            {duration === undefined ? '...' : formatTime(duration || 0)}
+          </span>
         </div>
         <Button
           variant="ghost"
@@ -1050,6 +1054,7 @@ const SpotifyLandingPage = () => {
   const [showBottomPlayer, setShowBottomPlayer] = useState(false)
   const [isAudioActuallyPlaying, setIsAudioActuallyPlaying] = useState(false)
   const [isLoadingSamples, setIsLoadingSamples] = useState(true)
+  const [audioDurations, setAudioDurations] = useState<{[key: string]: number}>({})
   const jingleSectionRef = useRef<HTMLElement>(null)
   const samplesPerPage = 4
   const mobilePerPage = 1
@@ -1084,224 +1089,135 @@ const SpotifyLandingPage = () => {
   const fetchJingleSamples = async () => {
     setIsLoadingSamples(true)
     try {
+      // First, get all available jingle samples
       const { data, error } = await createClient()
         .from("jingle_samples")
         .select("*")
-        .limit(20) // Increased from 12 to 20 samples
-        .order("random()") // Use PostgreSQL random() function for database-level randomization
+        .order("created_at", { ascending: false })
 
       if (error) {
-        console.error("Error fetching jingle samples:", error)
+        console.error("Database error fetching jingle samples:", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        })
+        
+        // Show a single informative message when there's a database error
         setJingleSamples([
           {
-            id: 1,
-            title: "Toko Kopi Ndeso",
-            description: "Jingle untuk kopi lokal dengan nuansa tradisional",
-            audio_url: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav",
-            cover_image_url: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=300&h=300&fit=crop",
-            business_type: "Kafe",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          {
-            id: 2,
-            title: "Laundry Express",
-            description: "Jingle cepat dan energik untuk layanan laundry",
-            audio_url: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav",
-            cover_image_url: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&h=300&fit=crop",
-            business_type: "Laundry",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          {
-            id: 3,
-            title: "Warung Sembako Amanah",
-            description: "Jingle hangat untuk warung sembako keluarga",
-            audio_url: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav",
-            cover_image_url: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=300&h=300&fit=crop",
-            business_type: "Retail",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          {
-            id: 4,
-            title: "Bengkel Motor Jaya",
-            description: "Jingle untuk bengkel motor dengan beat kuat",
-            audio_url: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav",
-            cover_image_url: "https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=300&h=300&fit=crop",
-            business_type: "Bengkel",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          {
-            id: 5,
-            title: "Salon Cantik Indah",
-            description: "Jingle elegan untuk salon kecantikan",
-            audio_url: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav",
-            cover_image_url: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=300&h=300&fit=crop",
-            business_type: "Salon",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          {
-            id: 6,
-            title: "Restoran Padang Sederhana",
-            description: "Jingle autentik untuk masakan Padang",
-            audio_url: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav",
-            cover_image_url: "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=300&h=300&fit=crop",
-            business_type: "Restoran",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          {
-            id: 7,
-            title: "Toko Elektronik Maju",
-            description: "Jingle modern untuk toko elektronik",
-            audio_url: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav",
-            cover_image_url: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=300&h=300&fit=crop",
-            business_type: "Elektronik",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          {
-            id: 8,
-            title: "Apotek Sehat Sentosa",
-            description: "Jingle terpercaya untuk apotek keluarga",
-            audio_url: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav",
-            cover_image_url: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?w=300&h=300&fit=crop",
-            business_type: "Apotek",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          {
-            id: 9,
-            title: "Barbershop Classic",
-            description: "Jingle bergaya untuk barbershop pria",
-            audio_url: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav",
-            cover_image_url: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=300&h=300&fit=crop",
-            business_type: "Barbershop",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          {
-            id: 10,
-            title: "Butik Fashion Trendy",
-            description: "Jingle stylish untuk butik fashion wanita",
-            audio_url: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav",
-            cover_image_url: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=300&h=300&fit=crop",
-            business_type: "Fashion",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          {
-            id: 11,
-            title: "Gym Fitness Pro",
-            description: "Jingle energik untuk pusat kebugaran",
-            audio_url: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav",
-            cover_image_url: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&h=300&fit=crop",
-            business_type: "Fitness",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          {
-            id: 12,
-            title: "Toko Buah Segar",
-            description: "Jingle segar untuk toko buah dan sayur",
-            audio_url: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav",
-            cover_image_url: "https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=300&h=300&fit=crop",
-            business_type: "Retail",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          {
-            id: 13,
-            title: "Warung Makan Bu Ani",
-            description: "Jingle hangat untuk warung makan keluarga",
-            audio_url: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav",
-            cover_image_url: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=300&h=300&fit=crop",
-            business_type: "Kuliner",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          {
-            id: 14,
-            title: "Toko Sepatu Berkah",
-            description: "Jingle trendi untuk toko sepatu",
-            audio_url: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav",
-            cover_image_url: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=300&h=300&fit=crop",
-            business_type: "Fashion",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          {
-            id: 15,
-            title: "Service HP Cepat",
-            description: "Jingle teknologi untuk service handphone",
-            audio_url: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav",
-            cover_image_url: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=300&h=300&fit=crop",
-            business_type: "Service",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          {
-            id: 16,
-            title: "Penjahit Mandiri",
-            description: "Jingle klasik untuk jasa penjahit",
-            audio_url: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav",
-            cover_image_url: "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=300&h=300&fit=crop",
-            business_type: "Jasa",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          {
-            id: 17,
-            title: "Depot Air Minum Sejuk",
-            description: "Jingle segar untuk depot air minum",
-            audio_url: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav",
-            cover_image_url: "https://images.unsplash.com/photo-1563263090-e41dda73de18?w=300&h=300&fit=crop",
-            business_type: "Retail",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          {
-            id: 18,
-            title: "Fotocopy Print Center",
-            description: "Jingle praktis untuk jasa fotocopy",
-            audio_url: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav",
-            cover_image_url: "https://images.unsplash.com/photo-1586717791821-3f44a563fa4c?w=300&h=300&fit=crop",
-            business_type: "Jasa",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          {
-            id: 19,
-            title: "Toko Kelontong Rezeki",
-            description: "Jingle ramah untuk toko kelontong",
+            id: 0,
+            title: "Error Koneksi Database",
+            description: "Tidak dapat mengakses data jingle. Silakan refresh halaman atau hubungi admin jika masalah berlanjut.",
             audio_url: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav",
             cover_image_url: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop",
-            business_type: "Retail",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          {
-            id: 20,
-            title: "Warnet Game Online",
-            description: "Jingle energik untuk warnet gaming",
-            audio_url: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav",
-            cover_image_url: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=300&h=300&fit=crop",
-            business_type: "Entertainment",
+            business_type: "Error",
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           }
         ])
       } else {
-        setJingleSamples(data || [])
+        // Show actual database data with proper random sampling
+        console.log("Successfully fetched jingle samples:", data?.length || 0, "records")
+        if (data && data.length > 0) {
+          // Implement client-side randomization and limit to 20 samples
+          const shuffled = [...data].sort(() => Math.random() - 0.5)
+          const samplesToShow = data.length > 20 ? shuffled.slice(0, 20) : shuffled
+          setJingleSamples(samplesToShow)
+          // Load audio durations for all samples
+          loadAudioDurations(samplesToShow)
+        } else {
+          // If database returns empty result, show message to add data
+          console.log("No jingle samples found in database")
+          setJingleSamples([
+            {
+              id: 0,
+              title: "Belum Ada Data Jingle",
+              description: "Silakan tambah jingle sample melalui halaman /addsong untuk melihat contoh jingle di sini.",
+              audio_url: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav",
+              cover_image_url: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&h=300&fit=crop",
+              business_type: "Info",
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            }
+          ])
+        }
       }
     } catch (error) {
-      console.error("Error:", error)
+      console.error("Network/Connection error:", {
+        error: error,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        type: typeof error
+      })
+      
+      // Only on network errors, show a single connection error item
+      setJingleSamples([
+        {
+          id: 0,
+          title: "Koneksi Terputus",
+          description: "Tidak dapat terhubung ke server. Silakan periksa koneksi internet dan refresh halaman.",
+          audio_url: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav",
+          cover_image_url: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop",
+          business_type: "Error",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }
+      ])
     } finally {
       setIsLoadingSamples(false)
     }
+  }
+
+  // Function to load audio duration for each sample
+  const loadAudioDurations = async (samples: any[]) => {
+    const durations: {[key: string]: number} = {}
+    
+    // Load durations for all samples concurrently
+    const promises = samples.map((sample) => {
+      return new Promise<void>((resolve) => {
+        const audio = new Audio()
+        audio.crossOrigin = "anonymous"
+        
+        const handleLoadedMetadata = () => {
+          if (isFinite(audio.duration)) {
+            durations[sample.audio_url] = audio.duration
+          } else {
+            durations[sample.audio_url] = 0
+          }
+          cleanup()
+          resolve()
+        }
+        
+        const handleError = () => {
+          console.warn(`Failed to load duration for: ${sample.title}`)
+          durations[sample.audio_url] = 0
+          cleanup()
+          resolve()
+        }
+        
+        const cleanup = () => {
+          audio.removeEventListener('loadedmetadata', handleLoadedMetadata)
+          audio.removeEventListener('error', handleError)
+          audio.src = ''
+        }
+        
+        audio.addEventListener('loadedmetadata', handleLoadedMetadata)
+        audio.addEventListener('error', handleError)
+        audio.src = sample.audio_url
+        
+        // Timeout after 10 seconds
+        setTimeout(() => {
+          if (!durations.hasOwnProperty(sample.audio_url)) {
+            durations[sample.audio_url] = 0
+            cleanup()
+            resolve()
+          }
+        }, 10000)
+      })
+    })
+    
+    await Promise.all(promises)
+    setAudioDurations(durations)
   }
 
   useEffect(() => {
@@ -2087,6 +2003,7 @@ const SpotifyLandingPage = () => {
                                   isActuallyPlaying={isAudioActuallyPlaying}
                                   trackIndex={jingleSamples.indexOf(sample)}
                                   currentTrackIndex={currentTrackIndex}
+                                  duration={audioDurations[sample.audio_url]}
                                 />
                               </div>
                             </div>
@@ -2205,6 +2122,7 @@ const SpotifyLandingPage = () => {
                                 isActuallyPlaying={isAudioActuallyPlaying}
                                 trackIndex={jingleSamples.indexOf(sample)}
                                 currentTrackIndex={currentTrackIndex}
+                                duration={audioDurations[sample.audio_url]}
                               />
                             </div>
                           </div>

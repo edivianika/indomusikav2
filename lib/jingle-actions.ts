@@ -23,25 +23,20 @@ export async function createJingleSample(data: JingleSampleData) {
 
     if (error) {
       console.error('Database error:', error)
-      return { 
-        success: false, 
-        error: error.message 
-      }
+      return `ERROR:${error.message}`
     }
 
-    revalidatePath('/addsong')
-    revalidatePath('/')
-    
-    return { 
-      success: true, 
-      data: result 
+    try {
+      revalidatePath('/addsong')
+      revalidatePath('/')
+    } catch (revalidateError) {
+      console.warn('Revalidation failed (non-critical):', revalidateError)
     }
+    
+    return 'SUCCESS:Jingle sample berhasil dibuat'
   } catch (error) {
     console.error('Server error:', error)
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    }
+    return `ERROR:${error instanceof Error ? error.message : 'Unknown error'}`
   }
 }
 
@@ -59,10 +54,7 @@ export async function uploadFile(file: File, bucket: string, path: string) {
 
     if (error) {
       console.error('Storage upload error:', error)
-      return { 
-        success: false, 
-        error: error.message 
-      }
+      return `ERROR:${error.message}`
     }
 
     // Get public URL
@@ -70,247 +62,153 @@ export async function uploadFile(file: File, bucket: string, path: string) {
       .from(bucket)
       .getPublicUrl(path)
 
-    return { 
-      success: true, 
-      url: publicUrl 
-    }
+    return `SUCCESS:${publicUrl}`
   } catch (error) {
     console.error('Upload error:', error)
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Upload failed' 
-    }
+    return `ERROR:${error instanceof Error ? error.message : 'Upload failed'}`
   }
 }
 
-export async function createJingleSampleWithFiles(
-  title: string,
-  description: string,
-  businessType: string,
-  audioFile: File,
-  coverImageFile?: File
-) {
+// Complete server action for handling both file upload and database insertion
+export async function createJingleSampleWithFiles(formData: FormData) {
   try {
+    console.log('Server action started with FormData entries:')
+    for (const [key, value] of formData.entries()) {
+      console.log(`${key}:`, value instanceof File ? `File(${value.name}, ${value.size} bytes)` : value)
+    }
+
     const supabase = await createClient()
     
-    // Generate unique file paths
-    const timestamp = Date.now()
-    const randomId = Math.random().toString(36).substring(2, 8)
-    const audioFileName = `${timestamp}-${randomId}-${audioFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
-    const audioPath = `jingles/${audioFileName}`
-
-    // Upload audio file
-    const audioUploadResult = await uploadFile(audioFile, 'jingle-files', audioPath)
-    
-    if (!audioUploadResult.success) {
-      // Try fallback to public bucket
-      const fallbackAudioResult = await uploadFile(audioFile, 'public', `public/${audioPath}`)
-      if (!fallbackAudioResult.success) {
-        return {
-          success: false,
-          error: `Audio upload failed: ${audioUploadResult.error}`
-        }
-      }
-      audioUploadResult.url = fallbackAudioResult.url
-    }
-
-    // Upload cover image if provided
-    let coverImageUrl = null
-    if (coverImageFile) {
-      const imageFileName = `${timestamp}-${randomId}-${coverImageFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
-      const imagePath = `covers/${imageFileName}`
-      
-      const imageUploadResult = await uploadFile(coverImageFile, 'jingle-files', imagePath)
-      
-      if (imageUploadResult.success) {
-        coverImageUrl = imageUploadResult.url
-      } else {
-        // Try fallback for image
-        const fallbackImageResult = await uploadFile(coverImageFile, 'public', `public/${imagePath}`)
-        if (fallbackImageResult.success) {
-          coverImageUrl = fallbackImageResult.url
-        }
-        // Don't fail if image upload fails, just continue without cover image
-      }
-    }
-
-    // Save to database
-    const { data, error } = await supabase
-      .from('jingle_samples')
-      .insert([{
-        title: title,
-        description: description || null,
-        business_type: businessType || null,
-        audio_url: audioUploadResult.url!,
-        cover_image_url: coverImageUrl
-      }])
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Database error:', error)
-      return { 
-        success: false, 
-        error: `Database error: ${error.message}` 
-      }
-    }
-
-    revalidatePath('/addsong')
-    revalidatePath('/')
-    
-    return { 
-      success: true, 
-      data: data 
-    }
-  } catch (error) {
-    console.error('Server error:', error)
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    }
-  }
-}
-
-// New FormData-based server action to fix serialization issues
-export async function createJingleSampleFromForm(formData: FormData) {
-  try {
-    const supabase = await createClient()
-    
-    // Extract form fields
+    // Extract form data
     const title = formData.get('title') as string
     const description = formData.get('description') as string
-    const businessType = formData.get('business_type') as string
-    const audioFile = formData.get('audio_file') as File
-    const coverImageFile = formData.get('cover_image_file') as File
+    const business_type = formData.get('business_type') as string
+    const audio_file = formData.get('audio_file') as File
+    const cover_image_file = formData.get('cover_image_file') as File | null
+
+    // Validate required fields
+    if (!title?.trim()) {
+      return 'ERROR:Judul wajib diisi'
+    }
     
-    if (!title || title.trim() === '') {
-      return {
-        success: false,
-        error: 'Title is required'
-      }
+    if (!audio_file || audio_file.size === 0) {
+      return 'ERROR:File audio wajib diupload'
     }
 
-    if (!audioFile || audioFile.size === 0) {
-      return {
-        success: false,
-        error: 'Audio file is required'
-      }
-    }
+    console.log('Validation passed, starting file uploads...')
 
     // Generate unique file paths
     const timestamp = Date.now()
-    const randomId = Math.random().toString(36).substring(2, 8)
-    const audioFileName = `${timestamp}-${randomId}-${audioFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
+    const randomId = Math.random().toString(36).substring(2, 15)
+    
+    const audioFileName = `${timestamp}-${randomId}-${audio_file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
     const audioPath = `jingles/${audioFileName}`
+    
+    let imageFileName: string | null = null
+    let imagePath: string | null = null
+    
+    if (cover_image_file && cover_image_file.size > 0) {
+      imageFileName = `${timestamp}-${randomId}-${cover_image_file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
+      imagePath = `covers/${imageFileName}`
+    }
+
+    console.log('Generated paths:', { audioPath, imagePath })
 
     // Upload audio file
-    const { data: audioData, error: audioError } = await supabase.storage
+    console.log('Uploading audio file...')
+    const { data: audioUpload, error: audioError } = await supabase.storage
       .from('jingle-files')
-      .upload(audioPath, audioFile, {
+      .upload(audioPath, audio_file, {
         cacheControl: '3600',
         upsert: false
       })
 
-    let audioUrl = ''
-    
     if (audioError) {
-      // Try fallback to public bucket
-      const fallbackPath = `public/${audioPath}`
-      const { data: fallbackAudioData, error: fallbackAudioError } = await supabase.storage
-        .from('public')
-        .upload(fallbackPath, audioFile, {
-          cacheControl: '3600',
-          upsert: false
-        })
+      console.error('Audio upload error:', audioError)
       
-      if (fallbackAudioError) {
-        return {
-          success: false,
-          error: `Audio upload failed: ${audioError.message}`
-        }
-      }
-      
-      const { data: { publicUrl: fallbackUrl } } = supabase.storage
-        .from('public')
-        .getPublicUrl(fallbackPath)
-      audioUrl = fallbackUrl
-    } else {
-      const { data: { publicUrl } } = supabase.storage
-        .from('jingle-files')
-        .getPublicUrl(audioPath)
-      audioUrl = publicUrl
-    }
-
-    // Upload cover image if provided
-    let coverImageUrl = null
-    if (coverImageFile && coverImageFile.size > 0) {
-      const imageFileName = `${timestamp}-${randomId}-${coverImageFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
-      const imagePath = `covers/${imageFileName}`
-      
-      const { data: imageData, error: imageError } = await supabase.storage
-        .from('jingle-files')
-        .upload(imagePath, coverImageFile, {
-          cacheControl: '3600',
-          upsert: false
-        })
-      
-      if (imageError) {
-        // Try fallback for image
-        const fallbackImagePath = `public/${imagePath}`
-        const { data: fallbackImageData, error: fallbackImageError } = await supabase.storage
+      // Fallback to public bucket if jingle-files doesn't exist
+      if (audioError.message.includes('Bucket not found')) {
+        console.log('Trying fallback to public bucket...')
+        const { data: audioUploadFallback, error: audioErrorFallback } = await supabase.storage
           .from('public')
-          .upload(fallbackImagePath, coverImageFile, {
+          .upload(`jingles/${audioFileName}`, audio_file, {
             cacheControl: '3600',
             upsert: false
           })
         
-        if (!fallbackImageError) {
-          const { data: { publicUrl: fallbackImageUrl } } = supabase.storage
-            .from('public')
-            .getPublicUrl(fallbackImagePath)
-          coverImageUrl = fallbackImageUrl
+        if (audioErrorFallback) {
+          return `ERROR:Audio upload failed: ${audioErrorFallback.message}`
         }
       } else {
-        const { data: { publicUrl: imagePublicUrl } } = supabase.storage
-          .from('jingle-files')
-          .getPublicUrl(imagePath)
-        coverImageUrl = imagePublicUrl
+        return `ERROR:Audio upload failed: ${audioError.message}`
       }
     }
 
-    // Save to database
-    const { data, error } = await supabase
+    // Get audio public URL
+    const bucket = audioError?.message.includes('Bucket not found') ? 'public' : 'jingle-files'
+    const finalAudioPath = audioError?.message.includes('Bucket not found') ? `jingles/${audioFileName}` : audioPath
+    
+    const { data: { publicUrl: audioUrl } } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(finalAudioPath)
+
+    console.log('Audio uploaded successfully:', audioUrl)
+
+    // Upload cover image if provided
+    let coverImageUrl: string | null = null
+    if (cover_image_file && cover_image_file.size > 0 && imagePath) {
+      console.log('Uploading cover image...')
+      
+      const { data: imageUpload, error: imageError } = await supabase.storage
+        .from(bucket)
+        .upload(bucket === 'public' ? `covers/${imageFileName}` : imagePath, cover_image_file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+
+      if (!imageError) {
+        const { data: { publicUrl } } = supabase.storage
+          .from(bucket)
+          .getPublicUrl(bucket === 'public' ? `covers/${imageFileName}` : imagePath)
+        coverImageUrl = publicUrl
+        console.log('Cover image uploaded successfully:', coverImageUrl)
+      } else {
+        console.warn('Cover image upload failed (optional):', imageError)
+      }
+    }
+
+    // Save to database using server-side client (bypasses RLS)
+    console.log('Saving to database...')
+    const { data: dbResult, error: dbError } = await supabase
       .from('jingle_samples')
       .insert([{
         title: title.trim(),
         description: description?.trim() || null,
-        business_type: businessType?.trim() || null,
+        business_type: business_type?.trim() || null,
         audio_url: audioUrl,
         cover_image_url: coverImageUrl
       }])
       .select()
       .single()
 
-    if (error) {
-      console.error('Database error:', error)
-      return { 
-        success: false, 
-        error: `Database error: ${error.message}` 
-      }
+    if (dbError) {
+      console.error('Database error:', dbError)
+      return `ERROR:Database save failed: ${dbError.message}`
     }
 
-    revalidatePath('/addsong')
-    revalidatePath('/')
+    console.log('Database save successful:', dbResult)
+
+    // Revalidate paths (treat as non-critical)
+    try {
+      revalidatePath('/addsong')
+      revalidatePath('/')
+    } catch (revalidateError) {
+      console.warn('Revalidation failed (non-critical):', revalidateError)
+    }
     
-    return { 
-      success: true, 
-      data: data 
-    }
+    return 'SUCCESS:Jingle sample berhasil ditambahkan!'
   } catch (error) {
-    console.error('Server error:', error)
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown server error' 
-    }
+    console.error('Server action error:', error)
+    return `ERROR:${error instanceof Error ? error.message : 'Terjadi kesalahan saat mengupload'}`
   }
 }

@@ -8,8 +8,6 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { createClient } from '@/lib/supabase/client'
-import { createJingleSampleFromForm } from '@/lib/jingle-actions'
 
 interface FormData {
   title: string
@@ -42,8 +40,6 @@ export function AddSongForm() {
     type: 'info'
   })
 
-  const supabase = createClient()
-
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData(prev => ({
       ...prev,
@@ -73,54 +69,67 @@ export function AddSongForm() {
 
     setUploadState({
       isUploading: true,
-      progress: 0,
+      progress: 20,
       message: 'Memulai upload...',
       type: 'info'
     })
 
     try {
-      // Create FormData for server action
-      const form = new FormData()
-      form.append('title', formData.title)
-      form.append('description', formData.description)
-      form.append('business_type', formData.business_type)
-      form.append('audio_file', formData.audio_file)
+      // Create FormData for API request
+      const submitFormData = new FormData()
+      submitFormData.append('title', formData.title.trim())
+      submitFormData.append('description', formData.description.trim())
+      submitFormData.append('business_type', formData.business_type.trim())
+      submitFormData.append('audio_file', formData.audio_file)
       
       if (formData.cover_image_file) {
-        form.append('cover_image_file', formData.cover_image_file)
+        submitFormData.append('cover_image_file', formData.cover_image_file)
       }
 
-      setUploadState(prev => ({ ...prev, progress: 30, message: 'Mengupload file...' }))
-      
-      // Use the new FormData-based server action
-      const result = await createJingleSampleFromForm(form)
+      setUploadState(prev => ({ ...prev, progress: 40, message: 'Mengupload file...' }))
 
-      if (!result.success) {
-        throw new Error(result.error || 'Upload failed')
+      // Call API route
+      const response = await fetch('/api/upload-jingle', {
+        method: 'POST',
+        body: submitFormData
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || `HTTP ${response.status}: ${response.statusText}`)
       }
 
-      setUploadState({
-        isUploading: false,
-        progress: 100,
-        message: 'Jingle sample berhasil ditambahkan!',
-        type: 'success'
-      })
+      if (result.success) {
+        setUploadState({
+          isUploading: false,
+          progress: 100,
+          message: result.message || 'Jingle sample berhasil ditambahkan!',
+          type: 'success'
+        })
 
-      // Reset form
-      setFormData({
-        title: '',
-        description: '',
-        business_type: '',
-        audio_file: null,
-        cover_image_file: null
-      })
+        // Reset form
+        setFormData({
+          title: '',
+          description: '',
+          business_type: '',
+          audio_file: null,
+          cover_image_file: null
+        })
 
-      // Reset file inputs
-      const audioInput = document.getElementById('audio-upload') as HTMLInputElement
-      const imageInput = document.getElementById('image-upload') as HTMLInputElement
-      if (audioInput) audioInput.value = ''
-      if (imageInput) imageInput.value = ''
+        // Reset file inputs
+        const audioInput = document.getElementById('audio-upload') as HTMLInputElement
+        const imageInput = document.getElementById('image-upload') as HTMLInputElement
+        if (audioInput) audioInput.value = ''
+        if (imageInput) imageInput.value = ''
 
+        // Refresh the page data
+        setTimeout(() => {
+          window.location.reload()
+        }, 2000)
+      } else {
+        throw new Error(result.error || 'Upload gagal')
+      }
     } catch (error) {
       console.error('Upload error:', error)
       setUploadState({
