@@ -506,6 +506,7 @@ const AudioPlayerCompact = ({
   trackIndex,
   currentTrackIndex,
   duration,
+  onPause,
 }: {
   src: string
   title?: string
@@ -516,6 +517,7 @@ const AudioPlayerCompact = ({
   trackIndex?: number
   currentTrackIndex?: number | null
   duration?: number
+  onPause?: () => void
 }) => {
   // MOST PRECISE APPROACH: Check both audio URL AND track index to ensure uniqueness
   const isThisExactTrackPlaying = (
@@ -528,7 +530,14 @@ const AudioPlayerCompact = ({
   )
 
   const handlePlay = () => {
-    onPlay()
+    if (isThisExactTrackPlaying) {
+      // If this track is currently playing, pause it
+      setCurrentlyPlayingAudio(null)
+      onPause?.()
+    } else {
+      // If this track is not playing, start playing it
+      onPlay()
+    }
   }
 
   return (
@@ -926,7 +935,6 @@ const BottomAudioPlayer = ({
           <div className="flex items-center justify-center gap-4">
             <Button
               onClick={() => {
-                console.log('Prev button clicked, trackIndex:', trackIndex)
                 onPrev()
               }}
               disabled={trackIndex === 0}
@@ -948,7 +956,6 @@ const BottomAudioPlayer = ({
             
             <Button
               onClick={() => {
-                console.log('Next button clicked, trackIndex:', trackIndex, 'allTracks.length:', allTracks.length)
                 onNext()
               }}
               disabled={trackIndex === allTracks.length - 1}
@@ -978,7 +985,6 @@ const BottomAudioPlayer = ({
           <div className="flex items-center gap-2">
             <Button
               onClick={() => {
-                console.log('Prev button clicked (desktop), trackIndex:', trackIndex)
                 onPrev()
               }}
               disabled={trackIndex === 0}
@@ -1000,7 +1006,6 @@ const BottomAudioPlayer = ({
             
             <Button
               onClick={() => {
-                console.log('Next button clicked (desktop), trackIndex:', trackIndex, 'allTracks.length:', allTracks.length)
                 onNext()
               }}
               disabled={trackIndex === allTracks.length - 1}
@@ -1055,6 +1060,7 @@ const SpotifyLandingPage = () => {
   const [isAudioActuallyPlaying, setIsAudioActuallyPlaying] = useState(false)
   const [isLoadingSamples, setIsLoadingSamples] = useState(true)
   const [audioDurations, setAudioDurations] = useState<{[key: string]: number}>({})
+  const [dragX, setDragX] = useState(0) // Track drag position for preview
   const jingleSectionRef = useRef<HTMLElement>(null)
   const samplesPerPage = 4
   const mobilePerPage = 1
@@ -1231,7 +1237,6 @@ const SpotifyLandingPage = () => {
     if (currentTrackIndex !== null && isMobile && isAudioActuallyPlaying) {
       const targetPage = Math.floor(currentTrackIndex / currentSamplesPerPage)
       if (targetPage !== currentPage) {
-        console.log('Auto-scrolling to track page:', targetPage, 'from current page:', currentPage)
         setCurrentPage(targetPage)
       }
     }
@@ -1707,9 +1712,6 @@ const SpotifyLandingPage = () => {
             <span className="text-white text-sm">
               {currentPage + 1} dari {totalPages}
             </span>
-            <span className="text-green-400 text-xs ml-2">
-              (Debug: currentPage={currentPage}, totalPages={totalPages})
-            </span>
           </div>
 
           {/* Cards Container with Side Navigation */}
@@ -1780,7 +1782,6 @@ const SpotifyLandingPage = () => {
                     e.preventDefault()
                     e.stopPropagation()
                     const newPage = Math.max(0, currentPage - 1)
-                    console.log('Page nav prev clicked, currentPage:', currentPage, 'newPage:', newPage)
                     setPageDirection(-1)
                     setCurrentPage(newPage)
                   }}
@@ -1798,7 +1799,6 @@ const SpotifyLandingPage = () => {
                     e.preventDefault()
                     e.stopPropagation()
                     const newPage = Math.min(totalPages - 1, currentPage + 1)
-                    console.log('Page nav next clicked, currentPage:', currentPage, 'newPage:', newPage, 'totalPages:', totalPages)
                     setPageDirection(1)
                     setCurrentPage(newPage)
                   }}
@@ -1814,134 +1814,230 @@ const SpotifyLandingPage = () => {
                 <motion.div 
                   className="flex items-center justify-center h-full relative"
                   key={currentPage}
-                  initial={{ x: pageDirection * 400, opacity: 0, scale: 0.85, rotateY: pageDirection * 20 }}
-                  animate={{ x: 0, opacity: 1, scale: 1, rotateY: 0 }}
-                  exit={{ x: pageDirection * -400, opacity: 0, scale: 0.85, rotateY: pageDirection * -20 }}
+                  initial={{ x: pageDirection * 300, opacity: 0, scale: 0.9 }}
+                  animate={{ x: 0, opacity: 1, scale: 1 }}
+                  exit={{ x: pageDirection * -300, opacity: 0, scale: 0.9 }}
                   transition={{ 
                     type: "spring", 
-                    stiffness: 250, 
-                    damping: 25,
-                    mass: 0.8,
-                    duration: 1.2
+                    stiffness: 600, 
+                    damping: 40,
+                    mass: 0.3,
+                    duration: 0.25
+                  }}
+                  drag="x"
+                  dragConstraints={{ left: 0, right: 0 }}
+                  dragElastic={0.1}
+                  onDrag={(event, info) => {
+                    // Update drag position for real-time preview
+                    setDragX(info.offset.x)
+                  }}
+                  onDragEnd={(event, info) => {
+                    // Reset drag position
+                    setDragX(0)
+                    
+                    const threshold = 50
+                    const velocity = Math.abs(info.velocity.x)
+                    
+                    // Consider both distance and velocity for responsive swipes
+                    if ((info.offset.x > threshold || (info.offset.x > 25 && velocity > 500)) && currentPage > 0) {
+                      // Swipe right - go to previous page
+                      setPageDirection(-1)
+                      setCurrentPage(currentPage - 1)
+                    } else if ((info.offset.x < -threshold || (info.offset.x < -25 && velocity > 500)) && currentPage < totalPages - 1) {
+                      // Swipe left - go to next page
+                      setPageDirection(1)
+                      setCurrentPage(currentPage + 1)
+                    }
                   }}
                 >
+                {/* Swipe Indicators */}
+                {currentPage > 0 && (
+                  <div className="absolute left-2 top-1/2 transform -translate-y-1/2 z-10 opacity-30">
+                    <div className="flex items-center gap-1 text-green-400">
+                      <ArrowLeft className="h-4 w-4" />
+                      <span className="text-xs">Swipe</span>
+                    </div>
+                  </div>
+                )}
+                {currentPage < totalPages - 1 && (
+                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2 z-10 opacity-30">
+                    <div className="flex items-center gap-1 text-green-400">
+                      <span className="text-xs">Swipe</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </div>
+                  </div>
+                )}
                 {jingleSamples
                   .slice(currentPage * currentSamplesPerPage, (currentPage + 1) * currentSamplesPerPage)
                   .map((sample, index) => {
                     return (
                       <motion.div
                         key={sample.id}
-                        initial={{ scale: 0.7, opacity: 0, rotateY: pageDirection * -30, z: -100 }}
+                        initial={{ scale: 0.8, opacity: 0, y: 20 }}
                         animate={{ 
                           scale: 1,
                           opacity: 1,
-                          rotateY: 0,
-                          z: 0
+                          y: 0
                         }}
                         exit={{
-                          scale: 0.7,
+                          scale: 0.8,
                           opacity: 0,
-                          rotateY: pageDirection * 30,
-                          z: -100
+                          y: -20
                         }}
                         transition={{ 
-                          delay: 0.4,
-                          duration: 0.8,
-                          ease: [0.25, 0.1, 0.25, 1],
+                          delay: 0.05,
+                          duration: 0.3,
                           type: "spring",
-                          stiffness: 200,
-                          damping: 20
+                          stiffness: 500,
+                          damping: 30
                         }}
                         whileHover={{
-                          scale: 1.08,
-                          rotateY: 3,
-                          y: -12,
-                          z: 50,
+                          scale: 1.05,
+                          y: -8,
                           transition: {
                             type: "spring",
-                            stiffness: 400,
-                            damping: 25,
-                            duration: 0.3
+                            stiffness: 500,
+                            damping: 30,
+                            duration: 0.2
                           }
                         }}
-                        whileTap={{ scale: 0.92, y: -5 }}
+                        whileTap={{ scale: 0.95, y: -3 }}
                         className="relative z-10"
                       >
-                        {/* Enhanced Background Preview Cards */}
-                        {/* Previous item shadow */}
-                        {currentPage > 0 && (
-                          <motion.div
-                            className="absolute -left-8 top-4 z-0"
-                            initial={{ x: -40, opacity: 0, scale: 0.7, rotateY: -25 }}
-                            animate={{ x: 0, opacity: 0.4, scale: 0.75, rotateY: -15 }}
-                            exit={{ x: -40, opacity: 0, scale: 0.6, rotateY: -30 }}
-                            transition={{ 
-                              type: "spring", 
-                              stiffness: 200, 
-                              damping: 20, 
-                              delay: 0.1
-                            }}
-                          >
-                            <Card className="bg-gradient-to-br from-[#1a1a1a]/60 to-[#0a0a0a]/60 border-green-500/10 w-[220px] h-[320px] transform rotate-[-8deg] backdrop-blur-sm">
-                              <div className="p-3 h-full">
-                                <div className="bg-gradient-to-br from-green-400/5 to-green-600/5 rounded-xl h-[140px] w-full mb-3 relative">
-                                  <div className="absolute inset-2 bg-gray-700/30 rounded-lg animate-pulse" />
+                        {/* Real-time Preview Cards */}
+                        {/* Previous item preview */}
+                        {currentPage > 0 && (() => {
+                          const prevSample = jingleSamples[(currentPage - 1) * currentSamplesPerPage]
+                          const dragProgress = Math.max(0, Math.min(1, dragX / 100)) // 0 to 1 based on drag
+                          const isVisible = dragX > 25 // Show when dragging right past 25px
+                          
+                          return (
+                            <motion.div
+                              className="absolute -left-16 top-0 z-5 pointer-events-none"
+                              initial={{ x: -60, opacity: 0, scale: 0.7 }}
+                              animate={{ 
+                                x: isVisible ? -20 + (dragProgress * 40) : -60,
+                                opacity: isVisible ? 0.6 + (dragProgress * 0.4) : 0,
+                                scale: isVisible ? 0.85 + (dragProgress * 0.1) : 0.7
+                              }}
+                              transition={{ 
+                                type: "spring", 
+                                stiffness: 400, 
+                                damping: 30,
+                                duration: 0.2
+                              }}
+                            >
+                              <Card className="bg-[#1a1a1a] border-green-500/20 w-[240px] h-[350px] overflow-hidden">
+                                <div className="p-3 h-full">
+                                  <div className="bg-gradient-to-br from-green-400/20 to-green-600/20 rounded-xl h-[140px] w-full mb-3 relative overflow-hidden">
+                                    <img 
+                                      src={prevSample?.cover_image_url || "/placeholder.svg"} 
+                                      alt={prevSample?.title || "Previous"}
+                                      className="object-cover w-full h-full"
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                                    <div className="absolute top-2 right-2">
+                                      <Badge className="bg-green-500/80 text-white text-xs px-2 py-1">
+                                        {prevSample?.business_type || 'Umum'}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                  <div className="space-y-2">
+                                    <h3 className="text-white font-bold text-sm line-clamp-2">{prevSample?.title || 'Previous Track'}</h3>
+                                    <p className="text-gray-400 text-xs line-clamp-2">
+                                      {prevSample?.description || 'Previous jingle sample'}
+                                    </p>
+                                  </div>
                                 </div>
-                                <div className="space-y-2">
-                                  <div className="h-3 bg-gray-700/40 rounded w-3/4 animate-pulse" />
-                                  <div className="h-2 bg-gray-800/40 rounded w-1/2 animate-pulse" />
-                                </div>
-                                <div className="mt-4 text-xs text-gray-500/60 text-center">Previous</div>
-                              </div>
-                            </Card>
-                          </motion.div>
-                        )}
+                              </Card>
+                            </motion.div>
+                          )
+                        })()}
                         
-                        {/* Next item shadow */}
-                        {currentPage < totalPages - 1 && (
-                          <motion.div
-                            className="absolute -right-8 top-4 z-0"
-                            initial={{ x: 40, opacity: 0, scale: 0.7, rotateY: 25 }}
-                            animate={{ x: 0, opacity: 0.4, scale: 0.75, rotateY: 15 }}
-                            exit={{ x: 40, opacity: 0, scale: 0.6, rotateY: 30 }}
-                            transition={{ 
-                              type: "spring", 
-                              stiffness: 200, 
-                              damping: 20, 
-                              delay: 0.1
-                            }}
-                          >
-                            <Card className="bg-gradient-to-br from-[#1a1a1a]/60 to-[#0a0a0a]/60 border-green-500/10 w-[220px] h-[320px] transform rotate-[8deg] backdrop-blur-sm">
-                              <div className="p-3 h-full">
-                                <div className="bg-gradient-to-br from-green-400/5 to-green-600/5 rounded-xl h-[140px] w-full mb-3 relative">
-                                  <div className="absolute inset-2 bg-gray-700/30 rounded-lg animate-pulse" />
+                        {/* Next item preview */}
+                        {currentPage < totalPages - 1 && (() => {
+                          const nextSample = jingleSamples[(currentPage + 1) * currentSamplesPerPage]
+                          const dragProgress = Math.max(0, Math.min(1, Math.abs(dragX) / 100)) // 0 to 1 based on drag
+                          const isVisible = dragX < -25 // Show when dragging left past -25px
+                          
+                          return (
+                            <motion.div
+                              className="absolute -right-16 top-0 z-5 pointer-events-none"
+                              initial={{ x: 60, opacity: 0, scale: 0.7 }}
+                              animate={{ 
+                                x: isVisible ? 20 - (dragProgress * 40) : 60,
+                                opacity: isVisible ? 0.6 + (dragProgress * 0.4) : 0,
+                                scale: isVisible ? 0.85 + (dragProgress * 0.1) : 0.7
+                              }}
+                              transition={{ 
+                                type: "spring", 
+                                stiffness: 400, 
+                                damping: 30,
+                                duration: 0.2
+                              }}
+                            >
+                              <Card className="bg-[#1a1a1a] border-green-500/20 w-[240px] h-[350px] overflow-hidden">
+                                <div className="p-3 h-full">
+                                  <div className="bg-gradient-to-br from-green-400/20 to-green-600/20 rounded-xl h-[140px] w-full mb-3 relative overflow-hidden">
+                                    <img 
+                                      src={nextSample?.cover_image_url || "/placeholder.svg"} 
+                                      alt={nextSample?.title || "Next"}
+                                      className="object-cover w-full h-full"
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                                    <div className="absolute top-2 right-2">
+                                      <Badge className="bg-green-500/80 text-white text-xs px-2 py-1">
+                                        {nextSample?.business_type || 'Umum'}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                  <div className="space-y-2">
+                                    <h3 className="text-white font-bold text-sm line-clamp-2">{nextSample?.title || 'Next Track'}</h3>
+                                    <p className="text-gray-400 text-xs line-clamp-2">
+                                      {nextSample?.description || 'Next jingle sample'}
+                                    </p>
+                                  </div>
                                 </div>
-                                <div className="space-y-2">
-                                  <div className="h-3 bg-gray-700/40 rounded w-3/4 animate-pulse" />
-                                  <div className="h-2 bg-gray-800/40 rounded w-1/2 animate-pulse" />
-                                </div>
-                                <div className="mt-4 text-xs text-gray-500/60 text-center">Next</div>
-                              </div>
-                            </Card>
-                          </motion.div>
-                        )}
+                              </Card>
+                            </motion.div>
+                          )
+                        })()}
 
-                        {/* Main card */}
+                        {/* Main card with drag responsiveness */}
                         <motion.div
                           whileHover={{ 
-                            scale: 1.08, 
-                            y: -8, 
-                            rotateX: 5,
-                            transition: { type: "spring", stiffness: 300, damping: 20 }
+                            scale: 1.05, 
+                            y: -5,
+                            transition: { type: "spring", stiffness: 400, damping: 25 }
                           }}
                           animate={{
-                            y: [0, -2, 0],
-                            rotateX: [0, 1, 0]
+                            y: [0, -1, 0],
+                            x: dragX, // Follow drag position
+                            scale: Math.max(0.95, 1 - Math.abs(dragX) * 0.001), // Subtle scale based on drag
+                            opacity: Math.max(0.7, 1 - Math.abs(dragX) * 0.003) // Slight opacity change
                           }}
                           transition={{
-                            duration: 4,
-                            repeat: Infinity,
-                            ease: "easeInOut"
+                            y: {
+                              duration: 3,
+                              repeat: Infinity,
+                              ease: "easeInOut"
+                            },
+                            x: {
+                              type: "spring",
+                              stiffness: 300,
+                              damping: 30,
+                              mass: 0.5
+                            },
+                            scale: {
+                              type: "spring",
+                              stiffness: 400,
+                              damping: 25
+                            },
+                            opacity: {
+                              type: "spring",
+                              stiffness: 400,
+                              damping: 25
+                            }
                           }}
                           className="mx-3 relative z-20"
                         >
@@ -2004,6 +2100,11 @@ const SpotifyLandingPage = () => {
                                   trackIndex={jingleSamples.indexOf(sample)}
                                   currentTrackIndex={currentTrackIndex}
                                   duration={audioDurations[sample.audio_url]}
+                                  onPause={() => {
+                                    setIsAudioActuallyPlaying(false)
+                                    setShowBottomPlayer(false)
+                                    setCurrentTrackIndex(null)
+                                  }}
                                 />
                               </div>
                             </div>
@@ -2022,15 +2123,15 @@ const SpotifyLandingPage = () => {
               <AnimatePresence mode="wait">
                 <motion.div
                   key={currentPage}
-                  initial={{ x: pageDirection * 300, opacity: 0, scale: 0.9, rotateY: pageDirection * 15 }}
-                  animate={{ x: 0, opacity: 1, scale: 1, rotateY: 0 }}
-                  exit={{ x: pageDirection * -300, opacity: 0, scale: 0.9, rotateY: pageDirection * -15 }}
+                  initial={{ x: pageDirection * 200, opacity: 0, scale: 0.95 }}
+                  animate={{ x: 0, opacity: 1, scale: 1 }}
+                  exit={{ x: pageDirection * -200, opacity: 0, scale: 0.95 }}
                   transition={{ 
                     type: "spring", 
-                    stiffness: 200, 
-                    damping: 25,
-                    mass: 0.8,
-                    duration: 1.0
+                    stiffness: 500, 
+                    damping: 35,
+                    mass: 0.4,
+                    duration: 0.3
                   }}
                   className="contents"
                 >
@@ -2039,29 +2140,26 @@ const SpotifyLandingPage = () => {
                     .map((sample, index) => (
                       <motion.div
                         key={sample.id}
-                        initial={{ opacity: 0, x: 60, y: 30, scale: 0.8, rotateY: 15 }}
-                        animate={{ opacity: 1, x: 0, y: 0, scale: 1, rotateY: 0 }}
+                        initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
                         transition={{ 
-                          duration: 1.0, 
-                          delay: index * 0.12,
-                          ease: [0.25, 0.1, 0.25, 1],
+                          duration: 0.4, 
+                          delay: index * 0.05,
                           type: "spring",
-                          stiffness: 200,
-                          damping: 20
+                          stiffness: 400,
+                          damping: 30
                         }}
                         whileHover={{ 
-                          scale: 1.12, 
-                          y: -20,
-                          rotateY: 8,
-                          z: 50,
+                          scale: 1.05, 
+                          y: -10,
                           transition: { 
                             type: "spring", 
-                            stiffness: 300, 
-                            damping: 20,
-                            duration: 0.4
+                            stiffness: 400, 
+                            damping: 25,
+                            duration: 0.2
                           }
                         }}
-                        whileTap={{ scale: 0.92, y: -8 }}
+                        whileTap={{ scale: 0.95, y: -5 }}
                         className="flex justify-center"
                       >
                         <Card className={`bg-[#1a1a1a] overflow-hidden group transition-all duration-500 ${
@@ -2123,6 +2221,11 @@ const SpotifyLandingPage = () => {
                                 trackIndex={jingleSamples.indexOf(sample)}
                                 currentTrackIndex={currentTrackIndex}
                                 duration={audioDurations[sample.audio_url]}
+                                onPause={() => {
+                                  setIsAudioActuallyPlaying(false)
+                                  setShowBottomPlayer(false)
+                                  setCurrentTrackIndex(null)
+                                }}
                               />
                             </div>
                           </div>
