@@ -880,7 +880,7 @@ const BottomAudioPlayer = ({
       initial={{ y: 100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 100, opacity: 0 }}
-      className="fixed bottom-0 left-0 right-0 z-50 bg-[#181818] border-t border-[#282828] p-4"
+      className="fixed bottom-0 left-0 right-0 z-50 bg-[#181818] border-t border-[#282828] p-3"
     >
       <audio
         ref={audioRef}
@@ -892,22 +892,22 @@ const BottomAudioPlayer = ({
       
       <div className="max-w-6xl mx-auto">
         {/* Mobile Layout */}
-        <div className="md:hidden space-y-3">
-          <div className="flex items-center gap-3">
+        <div className="md:hidden space-y-2.5">
+          <div className="flex items-center gap-2.5">
             <img
               src={track.cover_image_url || '/placeholder.svg'}
               alt={track.title}
-              className="w-12 h-12 rounded-lg object-cover"
+              className="w-10 h-10 rounded-lg object-cover"
             />
             <div className="flex-1 min-w-0">
-              <h4 className="text-white font-medium truncate">{track.title}</h4>
-              <p className="text-gray-400 text-sm truncate">{track.business_type || 'Jingle Sample'}</p>
+              <h4 className="text-white text-sm font-medium truncate">{track.title}</h4>
+              <p className="text-gray-400 text-xs truncate">{track.business_type || 'Jingle Sample'}</p>
             </div>
             <Button
               onClick={onClose}
               variant="ghost"
               size="icon"
-              className="text-gray-400 hover:text-white h-8 w-8"
+              className="text-gray-400 hover:text-white h-7 w-7"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -932,57 +932,7 @@ const BottomAudioPlayer = ({
             </div>
           </div>
           
-          <div className="flex items-center justify-center gap-4">
-            <Button
-              onClick={() => {
-                onPrev()
-              }}
-              disabled={trackIndex === 0}
-              variant="ghost"
-              size="icon"
-              className="text-white hover:bg-[#404040] h-10 w-10 rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            
-            <Button
-              onClick={togglePlay}
-              variant="ghost"
-              size="icon"
-              className="text-white hover:bg-green-600 h-12 w-12 rounded-full bg-green-500"
-            >
-              {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
-            </Button>
-            
-            <Button
-              onClick={() => {
-                onNext()
-              }}
-              disabled={trackIndex === allTracks.length - 1}
-              variant="ghost"
-              size="icon"
-              className="text-white hover:bg-[#404040] h-10 w-10 rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ArrowRight className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
-        
-        {/* Desktop Layout */}
-        <div className="hidden md:flex items-center gap-4">
-          <div className="flex items-center gap-3 min-w-0 flex-1">
-            <img
-              src={track.cover_image_url || '/placeholder.svg'}
-              alt={track.title}
-              className="w-14 h-14 rounded-lg object-cover"
-            />
-            <div className="min-w-0">
-              <h4 className="text-white font-medium truncate">{track.title}</h4>
-              <p className="text-gray-400 text-sm truncate">{track.business_type || 'Jingle Sample'}</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center gap-3.5">
             <Button
               onClick={() => {
                 onPrev()
@@ -1016,10 +966,60 @@ const BottomAudioPlayer = ({
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
+        </div>
+        
+        {/* Desktop Layout */}
+        <div className="hidden md:flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <img
+              src={track.cover_image_url || '/placeholder.svg'}
+              alt={track.title}
+              className="w-12 h-12 rounded-lg object-cover"
+            />
+            <div className="min-w-0">
+              <h4 className="text-white text-sm font-medium truncate">{track.title}</h4>
+              <p className="text-gray-400 text-xs truncate">{track.business_type || 'Jingle Sample'}</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => {
+                onPrev()
+              }}
+              disabled={trackIndex === 0}
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-[#404040] h-7 w-7 rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+            </Button>
+            
+            <Button
+              onClick={togglePlay}
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-green-600 h-9 w-9 rounded-full bg-green-500"
+            >
+              {isPlaying ? <Pause className="h-4.5 w-4.5" /> : <Play className="h-4.5 w-4.5" />}
+            </Button>
+            
+            <Button
+              onClick={() => {
+                onNext()
+              }}
+              disabled={trackIndex === allTracks.length - 1}
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-[#404040] h-7 w-7 rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Button>
+          </div>
           
           <div className="flex items-center gap-2 flex-1 max-w-md">
-            <span className="text-gray-400 text-xs min-w-[40px]">{formatTime(currentTime)}</span>
-            <div className="flex-1 bg-[#404040] rounded-full h-1 cursor-pointer"
+            <span className="text-gray-400 text-[10px] min-w-[36px]">{formatTime(currentTime)}</span>
+            <div className="flex-1 bg-[#404040] rounded-full h-[3px] cursor-pointer"
                  onClick={(e) => {
                    const rect = e.currentTarget.getBoundingClientRect()
                    const x = e.clientX - rect.left
@@ -1027,18 +1027,18 @@ const BottomAudioPlayer = ({
                    handleSeek(Math.min(Math.max(percentage, 0), 100))
                  }}>
               <div 
-                className="bg-green-500 h-1 rounded-full transition-all duration-100"
+                className="bg-green-500 h-[3px] rounded-full transition-all duration-100"
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <span className="text-gray-400 text-xs min-w-[40px]">{formatTime(duration)}</span>
+            <span className="text-gray-400 text-[10px] min-w-[36px]">{formatTime(duration)}</span>
           </div>
           
           <Button
             onClick={onClose}
             variant="ghost"
             size="icon"
-            className="text-gray-400 hover:text-white h-8 w-8"
+            className="text-gray-400 hover:text-white h-7 w-7"
           >
             <X className="h-4 w-4" />
           </Button>
@@ -1401,11 +1401,9 @@ const SpotifyLandingPage = () => {
               variant="outline"
               size="lg"
               onClick={() => {
-                if (jingleSectionRef.current) {
-                  jingleSectionRef.current.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'center' 
-                  })
+                if (jingleSamples.length > 0) {
+                  const randomIndex = Math.floor(Math.random() * jingleSamples.length)
+                  playTrack(randomIndex)
                 }
               }}
               className="border-green-500 text-green-400 hover:bg-green-500/20 hover:shadow-lg hover:shadow-green-500/25 px-8 sm:px-10 py-4 sm:py-5 text-lg sm:text-xl rounded-full bg-transparent w-full sm:w-auto hover:border-green-300 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 group"
