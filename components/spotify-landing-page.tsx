@@ -1321,13 +1321,13 @@ const SpotifyLandingPage = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-[#121212]/80 to-black/90"></div>
 
         {/* Top notification badges with mobile-responsive positioning */}
-        <div className="absolute top-6 sm:top-8 left-1/2 transform -translate-x-1/2 z-20 w-full max-w-3xl px-4">
-          <div className="flex flex-col sm:flex-row justify-center sm:justify-between items-center gap-3 sm:gap-6">
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 text-white text-sm">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+        <div className="absolute top-4 sm:top-6 md:top-8 left-1/2 transform -translate-x-1/2 z-20 w-full max-w-3xl px-4">
+          <div className="flex flex-col sm:flex-row justify-center sm:justify-between items-center gap-2 sm:gap-3 md:gap-6">
+            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5 sm:px-4 sm:py-2 text-white text-xs sm:text-sm">
+              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-400 rounded-full animate-pulse"></div>
               <span className="whitespace-nowrap font-medium">🔥 1000+ Jingle Sudah Dibuat</span>
             </div>
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 text-white text-sm">
+            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5 sm:px-4 sm:py-2 text-white text-xs sm:text-sm">
               <span className="whitespace-nowrap font-medium">⭐ Rating 4.9/5</span>
             </div>
           </div>
@@ -1360,16 +1360,16 @@ const SpotifyLandingPage = () => {
           ))}
         </div>
 
-        <div className="relative z-10 text-center px-4 max-w-6xl mx-auto mt-24 sm:mt-28 md:mt-20">
+        <div className="relative z-10 text-center px-4 max-w-6xl mx-auto mt-32 sm:mt-28 md:mt-20">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             className="mb-8"
           >
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-white leading-snug">
-              <span className="block mb-1">👉 Biar Usaha Kamu</span>
-              <span className="block mb-1">Makin Dikenal,</span>
+            <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 text-white leading-tight sm:leading-snug">
+              <span className="block mb-1 sm:mb-1">👉 Biar Usaha Kamu</span>
+              <span className="block mb-1 sm:mb-1">Makin Dikenal,</span>
               <span className="text-green-400 block">Bikin Jingle yang Nempel di Kepala!</span>
             </h1>
 
