@@ -1318,30 +1318,49 @@ const SpotifyLandingPage = () => {
   return (
     <div className="min-h-screen bg-[#121212] text-white overflow-hidden relative">
       {/* Navigation Header */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-sm border-b border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-sm border-b border-gray-800">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
+          <div className="flex items-center justify-between h-14 sm:h-16">
+            {/* Logo */}
             <div className="flex items-center">
-              <h1 className="text-xl font-bold text-white">Indomusika</h1>
+              <h1 className="text-lg sm:text-xl font-bold text-white">Indomusika</h1>
             </div>
-            <div className="flex items-center space-x-8">
+            
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-6 lg:space-x-8">
               <a 
                 href="/" 
-                className="text-gray-300 hover:text-white transition-colors"
+                className="text-gray-300 hover:text-white transition-colors text-sm lg:text-base"
               >
                 Beranda
               </a>
               <a 
                 href="/portfolio" 
-                className="text-gray-300 hover:text-white transition-colors"
+                className="text-gray-300 hover:text-white transition-colors text-sm lg:text-base"
               >
                 Portfolio
               </a>
               <Button
                 onClick={() => setIsFormOpen(true)}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full"
+                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 lg:px-4 lg:py-2 rounded-full text-sm lg:text-base"
               >
                 Pesan Jingle
+              </Button>
+            </div>
+
+            {/* Mobile Navigation */}
+            <div className="flex md:hidden items-center space-x-2">
+              <a 
+                href="/portfolio" 
+                className="text-gray-300 hover:text-white transition-colors text-sm px-2 py-1"
+              >
+                Portfolio
+              </a>
+              <Button
+                onClick={() => setIsFormOpen(true)}
+                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-full text-sm"
+              >
+                Pesan
               </Button>
             </div>
           </div>
@@ -1352,18 +1371,18 @@ const SpotifyLandingPage = () => {
       <div className="fixed inset-0 pointer-events-none z-10"></div>
 
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-[#191414] via-[#121212] to-black">
+      <section className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-[#191414] via-[#121212] to-black pt-14 sm:pt-16">
         <div className="absolute inset-0 bg-[url('/happy-business-owner-with-headphones-listening-to-.png')] bg-cover bg-center opacity-20"></div>
         <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-[#121212]/80 to-black/90"></div>
 
         {/* Top notification badges with mobile-responsive positioning */}
-        <div className="absolute top-4 sm:top-6 md:top-8 left-1/2 transform -translate-x-1/2 z-20 w-full max-w-3xl px-4">
-          <div className="flex flex-col sm:flex-row justify-center sm:justify-between items-center gap-2 sm:gap-3 md:gap-6">
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5 sm:px-4 sm:py-2 text-white text-xs sm:text-sm">
+        <div className="absolute top-2 sm:top-4 md:top-6 left-1/2 transform -translate-x-1/2 z-20 w-full max-w-3xl px-3 sm:px-4">
+          <div className="flex flex-col sm:flex-row justify-center sm:justify-between items-center gap-1.5 sm:gap-2 md:gap-3">
+            <div className="flex items-center gap-1.5 sm:gap-2 bg-white/10 backdrop-blur-sm rounded-full px-2.5 py-1 sm:px-3 sm:py-1.5 text-white text-xs sm:text-sm">
               <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-400 rounded-full animate-pulse"></div>
-              <span className="whitespace-nowrap font-medium">🔥 1000+ Jingle Sudah Dibuat</span>
+              <span className="whitespace-nowrap font-medium">🔥 1000+ Jingle</span>
             </div>
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5 sm:px-4 sm:py-2 text-white text-xs sm:text-sm">
+            <div className="flex items-center gap-1.5 sm:gap-2 bg-white/10 backdrop-blur-sm rounded-full px-2.5 py-1 sm:px-3 sm:py-1.5 text-white text-xs sm:text-sm">
               <span className="whitespace-nowrap font-medium">⭐ Rating 4.9/5</span>
             </div>
           </div>
