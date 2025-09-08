@@ -192,11 +192,31 @@ export default function PortfolioPage() {
             className="text-center"
           >
             <h1 className="text-4xl md:text-6xl font-bold mb-4">
-              Portfolio <span className="text-green-400">Karya</span>
+              Portfolio <span className="text-green-400">Jingle UMKM</span>
             </h1>
             <p className="text-xl md:text-2xl text-gray-200 mb-8">
-              Koleksi jingle terbaik yang telah kami buat untuk berbagai UMKM
+              Koleksi jingle terbaik untuk UMKM: restoran, toko, salon, bengkel, apotek, fashion. Jasa pembuatan lagu iklan profesional dengan harga terjangkau.
             </p>
+            
+            {/* Call to Action */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+              <div className="text-center sm:text-left">
+                <p className="text-lg text-gray-200 mb-2">
+                  Ingin membuat jingle untuk bisnis Anda?
+                </p>
+                <p className="text-sm text-gray-400">
+                  Mulai dari Rp199K • 100% Original • Cepat Selesai
+                </p>
+              </div>
+              <a 
+                href="/" 
+                className="bg-green-500 hover:bg-green-600 text-white font-semibold px-6 py-3 rounded-full transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2"
+              >
+                <span>🎵</span>
+                <span>Buat Jingle Sekarang</span>
+                <span>→</span>
+              </a>
+            </div>
           </motion.div>
         </div>
       </div>
