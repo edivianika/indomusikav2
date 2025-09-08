@@ -1,13 +1,14 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { Upload, Music, Image, Save, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
+import { Upload, Music, Image, Save, Loader2, CheckCircle, AlertCircle, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { createClient } from '@/lib/supabase/client'
 
 interface FormData {
   title: string
@@ -40,6 +41,136 @@ export function AddSongForm() {
     type: 'info'
   })
 
+  const [categories, setCategories] = useState<string[]>([])
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Fetch categories from database
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const supabase = createClient()
+        const { data, error } = await supabase
+          .from('jingle_samples')
+          .select('business_type')
+          .not('business_type', 'is', null)
+
+        if (error) {
+          console.error('Error fetching categories:', error)
+          // Fallback categories
+          setCategories([
+            'Kuliner',
+            'Elektronik', 
+            'Kecantikan',
+            'Otomotif',
+            'Kesehatan',
+            'Fashion',
+            'Pendidikan',
+            'Olahraga',
+            'Hiburan',
+            'Travel',
+            'Real Estate',
+            'Keuangan',
+            'Teknologi',
+            'Pertanian',
+            'Konstruksi',
+            'Transportasi',
+            'Lainnya'
+          ])
+        } else if (data && data.length > 0) {
+          // Extract unique categories
+          const uniqueCategories = Array.from(new Set(data.map(item => item.business_type)))
+          // Add common categories that might not be in database yet
+          const commonCategories = [
+            'Kuliner',
+            'Elektronik', 
+            'Kecantikan',
+            'Otomotif',
+            'Kesehatan',
+            'Fashion',
+            'Pendidikan',
+            'Olahraga',
+            'Hiburan',
+            'Travel',
+            'Real Estate',
+            'Keuangan',
+            'Teknologi',
+            'Pertanian',
+            'Konstruksi',
+            'Transportasi',
+            'Lainnya'
+          ]
+          
+          // Combine and sort categories
+          const allCategories = Array.from(new Set([...uniqueCategories, ...commonCategories]))
+          setCategories(allCategories.sort())
+        } else {
+          // No data, use default categories
+          setCategories([
+            'Kuliner',
+            'Elektronik', 
+            'Kecantikan',
+            'Otomotif',
+            'Kesehatan',
+            'Fashion',
+            'Pendidikan',
+            'Olahraga',
+            'Hiburan',
+            'Travel',
+            'Real Estate',
+            'Keuangan',
+            'Teknologi',
+            'Pertanian',
+            'Konstruksi',
+            'Transportasi',
+            'Lainnya'
+          ])
+        }
+      } catch (err) {
+        console.error('Error fetching categories:', err)
+        // Fallback categories
+        setCategories([
+          'Kuliner',
+          'Elektronik', 
+          'Kecantikan',
+          'Otomotif',
+          'Kesehatan',
+          'Fashion',
+          'Pendidikan',
+          'Olahraga',
+          'Hiburan',
+          'Travel',
+          'Real Estate',
+          'Keuangan',
+          'Teknologi',
+          'Pertanian',
+          'Konstruksi',
+          'Transportasi',
+          'Lainnya'
+        ])
+      } finally {
+        setIsLoadingCategories(false)
+      }
+    }
+
+    fetchCategories()
+  }, [])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
+
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData(prev => ({
       ...prev,
@@ -52,6 +183,14 @@ export function AddSongForm() {
       ...prev,
       [field]: file
     }))
+  }
+
+  const handleCategorySelect = (category: string) => {
+    setFormData(prev => ({
+      ...prev,
+      business_type: category
+    }))
+    setIsDropdownOpen(false)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -217,18 +356,49 @@ export function AddSongForm() {
             />
           </div>
 
-          {/* Business Type */}
+          {/* Business Type Dropdown */}
           <div>
             <label htmlFor="business_type" className="block text-white text-lg font-semibold mb-2">
-              Jenis Usaha
+              Kategori Usaha
             </label>
-            <Input
-              id="business_type"
-              value={formData.business_type}
-              onChange={(e) => handleInputChange('business_type', e.target.value)}
-              placeholder="Contoh: Kafe, Laundry, Retail"
-              className="bg-[#121212] border-[#282828] text-white placeholder-gray-400 text-lg p-4 focus:border-green-500"
-            />
+            <div className="relative" ref={dropdownRef}>
+              <button
+                type="button"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="w-full bg-[#121212] border border-[#282828] text-white text-lg p-4 rounded-md focus:border-green-500 focus:outline-none flex items-center justify-between hover:border-gray-600 transition-colors"
+              >
+                <span className={formData.business_type ? 'text-white' : 'text-gray-400'}>
+                  {formData.business_type || 'Pilih kategori usaha...'}
+                </span>
+                <ChevronDown 
+                  className={`w-5 h-5 text-gray-400 transition-transform ${
+                    isDropdownOpen ? 'rotate-180' : ''
+                  }`} 
+                />
+              </button>
+              
+              {isDropdownOpen && (
+                <div className="absolute z-10 w-full mt-1 bg-[#191414] border border-[#282828] rounded-md shadow-lg max-h-60 overflow-y-auto">
+                  {isLoadingCategories ? (
+                    <div className="p-4 text-center text-gray-400">
+                      <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" />
+                      Memuat kategori...
+                    </div>
+                  ) : (
+                    categories.map((category) => (
+                      <button
+                        key={category}
+                        type="button"
+                        onClick={() => handleCategorySelect(category)}
+                        className="w-full text-left px-4 py-3 text-white hover:bg-[#282828] transition-colors border-b border-[#282828] last:border-b-0"
+                      >
+                        {category}
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Audio File Upload */}

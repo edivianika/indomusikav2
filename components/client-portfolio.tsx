@@ -3,23 +3,23 @@
 import dynamic from 'next/dynamic'
 import { Suspense, useState, useEffect } from 'react'
 
-// Dynamic import untuk code splitting
-const SpotifyLandingPage = dynamic(
-  () => import('@/components/spotify-landing-page'),
+// Dynamic import untuk menghindari chunk loading issues
+const PortfolioPage = dynamic(
+  () => import('@/components/portfolio-page'),
   {
     loading: () => (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-white text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
-          <p>Memuat halaman...</p>
+          <p>Memuat portfolio...</p>
         </div>
       </div>
     ),
-    ssr: false, // Disable SSR untuk komponen yang berat
+    ssr: false,
   }
 )
 
-export default function ClientHome() {
+export default function ClientPortfolio() {
   const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
@@ -31,7 +31,7 @@ export default function ClientHome() {
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-white text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
-          <p>Memuat halaman...</p>
+          <p>Memuat portfolio...</p>
         </div>
       </div>
     )
@@ -42,11 +42,11 @@ export default function ClientHome() {
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-white text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
-          <p>Memuat halaman...</p>
+          <p>Memuat portfolio...</p>
         </div>
       </div>
     }>
-      <SpotifyLandingPage />
+      <PortfolioPage />
     </Suspense>
   )
 }
