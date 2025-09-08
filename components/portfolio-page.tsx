@@ -181,7 +181,7 @@ export default function PortfolioPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-black text-white pb-24">
       {/* Header */}
       <div className="bg-gradient-to-r from-green-600 to-green-800 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -246,7 +246,7 @@ export default function PortfolioPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Loading State */}
         {isLoading && (
-          <div className="space-y-2">
+          <div className="space-y-2 pb-32">
             {[...Array(6)].map((_, index) => (
               <div key={index} className="bg-gray-900 rounded-lg animate-pulse">
                 <div className="flex items-center gap-4 p-4">
@@ -265,7 +265,7 @@ export default function PortfolioPage() {
 
         {/* Error State */}
         {error && !isLoading && (
-          <div className="text-center py-12">
+          <div className="text-center py-12 pb-32">
             <div className="text-red-400 text-xl mb-4">⚠️ {error}</div>
             <button
               onClick={fetchPortfolioData}
@@ -278,7 +278,7 @@ export default function PortfolioPage() {
 
         {/* Portfolio List */}
         {!isLoading && !error && (
-          <div className="space-y-2">
+          <div className="space-y-2 pb-32">
             {filteredData.map((item, index) => (
               <motion.div
                 key={item.id}
@@ -348,7 +348,7 @@ export default function PortfolioPage() {
             ))}
 
             {filteredData.length === 0 && (
-              <div className="text-center py-12">
+              <div className="text-center py-12 pb-32">
                 <Music className="w-16 h-16 text-gray-600 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-gray-400 mb-2">
                   Tidak ada jingle ditemukan
