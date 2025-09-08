@@ -131,6 +131,32 @@ Setelah implementasi optimasi ini, diharapkan:
 - **TBT**: < 200ms (dari 5.8s)
 - **Performance Score**: > 80% (dari 46%)
 
+## Additional Optimizations (v2)
+
+### 1. JavaScript Execution Time Optimization
+- ✅ Enhanced package import optimization
+- ✅ Turbo mode for SVG handling
+- ✅ Aggressive code splitting
+- ✅ Lazy script loading
+
+### 2. Network Payload Reduction
+- ✅ Image optimization with Sharp
+- ✅ WebP/AVIF format conversion
+- ✅ Avatar image optimization (400-500KB → <100KB)
+- ✅ Hero image optimization (1.21MB → <300KB)
+
+### 3. Advanced Caching Strategy
+- ✅ Separate caches for different asset types
+- ✅ Avatar-specific caching
+- ✅ Image-specific caching
+- ✅ Aggressive lazy loading
+
+### 4. New Components
+- `AggressiveLazyImage` - More aggressive lazy loading
+- `OptimizedAvatar` - Specialized avatar optimization
+- `OptimizedHeroImage` - Hero image optimization
+- `OptimizedScriptLoader` - Lazy script loading
+
 ## Next Steps
 
 1. Deploy optimasi ke production
