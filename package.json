@@ -6,7 +6,11 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "analyze": "ANALYZE=true next build",
+    "build:analyze": "node scripts/analyze-bundle.js",
+    "lighthouse": "lighthouse http://localhost:3000 --output html --output-path ./lighthouse-report.html",
+    "perf": "npm run build && npm run lighthouse"
   },
   "dependencies": {
     "@emotion/is-prop-valid": "latest",

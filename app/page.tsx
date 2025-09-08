@@ -1,5 +1,5 @@
-import SpotifyLandingPage from "@/components/spotify-landing-page"
+import ClientHome from '@/components/client-home'
 
 export default function Home() {
-  return <SpotifyLandingPage />
+  return <ClientHome />
 }

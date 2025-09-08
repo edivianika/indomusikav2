@@ -1,0 +1,27 @@
+{
+  "name": "Indomusika - Jasa Jingle UMKM",
+  "short_name": "Indomusika",
+  "description": "Bikin jingle keren untuk usaha kamu! Jasa pembuatan jingle original untuk UMKM mulai Rp199K.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#1db954",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/placeholder-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/placeholder-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["music", "business", "entertainment"],
+  "lang": "id",
+  "dir": "ltr"
+}
