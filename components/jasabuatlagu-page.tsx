@@ -93,73 +93,78 @@ export default function JasaBuatLaguPage() {
   return (
     <div className="min-h-screen bg-white text-gray-900">
       {/* Navigation */}
-      <nav className="bg-white border-b border-gray-100 sticky top-0 z-50">
+      <nav className="bg-white border-b border-gray-100 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex items-center justify-between h-14 sm:h-16">
             <div className="flex items-center">
-              <h1 className="text-xl font-bold text-gray-900">Indomusika</h1>
+              <h1 className="text-lg sm:text-xl font-bold text-gray-900">Indomusika</h1>
             </div>
-            <div className="flex items-center space-x-4">
-              <a href="/" className="text-gray-600 hover:text-gray-900 transition-colors">Beranda</a>
-              <a href="/portfolio" className="text-gray-600 hover:text-gray-900 transition-colors">Portfolio</a>
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <a href="/" className="text-sm sm:text-base text-gray-600 hover:text-gray-900 transition-colors px-2 py-1 rounded-md hover:bg-gray-50">Beranda</a>
+              <a href="/portfolio" className="text-sm sm:text-base text-gray-600 hover:text-gray-900 transition-colors px-2 py-1 rounded-md hover:bg-gray-50">Portfolio</a>
             </div>
           </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="py-16 sm:py-24">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <section className="py-12 sm:py-16 lg:py-20">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
             {/* Hook Headline */}
-            <div className="mb-8">
-              <span className="text-4xl sm:text-5xl">🎶</span>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mt-4 leading-tight">
-                "Bisnis sepi? Jangan cuma pasang promo.<br className="hidden sm:block" />
-                <span className="text-green-600">Bikin orang otomatis inget usaha kamu lewat lagunya!</span>"
+            <div className="mb-8 sm:mb-12">
+              <div className="flex justify-center mb-4">
+                <span className="text-3xl sm:text-4xl lg:text-5xl">🎶</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-gray-900 leading-tight sm:leading-tight">
+                <span className="block">"Bisnis sepi? Jangan cuma pasang promo.</span>
+                <span className="block text-green-600 mt-2 sm:mt-3">Bikin orang otomatis inget usaha</span>
+                <span className="block text-green-600">kamu lewat lagunya!"</span>
               </h1>
             </div>
 
             {/* Opening Problem */}
-            <div className="mb-12">
-              <p className="text-lg sm:text-xl text-gray-700 leading-relaxed mb-6">
-                Pernah nggak, iklan udah jalan, promosi udah gencar, tapi orang lupa sama brand kamu?<br />
-                Mereka mampir sekali, habis itu hilang.
-              </p>
-              <p className="text-lg sm:text-xl text-gray-700 leading-relaxed">
-                <strong className="text-gray-900">Kenapa? Karena nggak ada yang nempel di kepala mereka.</strong>
-              </p>
+            <div className="mb-8 sm:mb-12 lg:mb-16">
+              <div className="max-w-3xl mx-auto">
+                <p className="text-base sm:text-lg md:text-xl text-gray-700 leading-relaxed mb-4 sm:mb-6">
+                  Pernah nggak, iklan udah jalan, promosi udah gencar, tapi orang lupa sama brand kamu?<br className="hidden sm:block" />
+                  <span className="block sm:inline">Mereka mampir sekali, habis itu hilang.</span>
+                </p>
+                <p className="text-base sm:text-lg md:text-xl text-gray-700 leading-relaxed">
+                  <strong className="text-gray-900 font-semibold">Kenapa? Karena nggak ada yang nempel di kepala mereka.</strong>
+                </p>
+              </div>
             </div>
 
             {/* Problem → Solution */}
-            <div className="bg-gray-50 rounded-2xl p-6 sm:p-8 mb-12">
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">
+            <div className="bg-gray-50 rounded-2xl p-4 sm:p-6 lg:p-8 mb-8 sm:mb-12">
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-4 sm:mb-6 text-center">
                 Lihat deh brand besar: Indomie, Tokopedia, Grab.
               </h2>
-              <p className="text-lg text-gray-700 mb-6">
-                Semua punya jingle.<br />
-                Bahkan cukup dengar 3 detik, kita langsung inget.
+              <p className="text-base sm:text-lg text-gray-700 mb-4 sm:mb-6 text-center">
+                Semua punya jingle.<br className="hidden sm:block" />
+                <span className="block sm:inline">Bahkan cukup dengar 3 detik, kita langsung inget.</span>
               </p>
-              <div className="bg-white rounded-xl p-6 border border-gray-200">
-                <h3 className="text-xl font-bold text-gray-900 mb-4">
+              <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6 text-center">
                   Nah, Indomusika bantuin UMKM kayak kamu bikin lagu/jingle original yang:
                 </h3>
-                <div className="space-y-3">
+                <div className="space-y-3 sm:space-y-4">
                   <div className="flex items-start space-x-3">
-                    <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-gray-700">Bikin nama usaha kamu langsung nempel di kepala orang</p>
+                    <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-green-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed">Bikin nama usaha kamu langsung nempel di kepala orang</p>
                   </div>
                   <div className="flex items-start space-x-3">
-                    <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-gray-700">Bisa dipakai di iklan, konten IG/TikTok, sampai diputar di toko/kedai kamu sendiri</p>
+                    <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-green-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed">Bisa dipakai di iklan, konten IG/TikTok, sampai diputar di toko/kedai kamu sendiri</p>
                   </div>
                   <div className="flex items-start space-x-3">
-                    <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-gray-700">Simple, catchy, dan sesuai gaya bisnismu (koplo, pop, EDM, akustik, apa aja bisa!)</p>
+                    <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-green-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed">Simple, catchy, dan sesuai gaya bisnismu (koplo, pop, EDM, akustik, apa aja bisa!)</p>
                   </div>
                 </div>
               </div>
