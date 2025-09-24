@@ -13,6 +13,19 @@ interface FacebookPixelProps {
 
 export default function FacebookPixel({ pixelId }: FacebookPixelProps) {
   useEffect(() => {
+    // Check if Facebook Pixel is already loaded
+    if (typeof window !== 'undefined' && window.fbq) {
+      console.log('Facebook Pixel already loaded, skipping initialization');
+      return;
+    }
+
+    // Check if script already exists
+    const existingScript = document.querySelector('script[src*="fbevents.js"]');
+    if (existingScript) {
+      console.log('Facebook Pixel script already exists, skipping initialization');
+      return;
+    }
+
     // Load Facebook Pixel script
     const script = document.createElement('script');
     script.innerHTML = `
@@ -25,9 +38,13 @@ export default function FacebookPixel({ pixelId }: FacebookPixelProps) {
       s.parentNode.insertBefore(t,s)}(window, document,'script',
       'https://connect.facebook.net/en_US/fbevents.js');
       fbq('init', '${pixelId}');
-      fbq('track', 'PageView');
     `;
     document.head.appendChild(script);
+
+    // Track PageView after script is loaded
+    setTimeout(() => {
+      trackPageView();
+    }, 100);
 
     // Cleanup function
     return () => {
@@ -44,13 +61,38 @@ export default function FacebookPixel({ pixelId }: FacebookPixelProps) {
 // Helper functions for tracking events
 export const trackEvent = (eventName: string, parameters?: any) => {
   if (typeof window !== 'undefined' && window.fbq) {
-    window.fbq('track', eventName, parameters);
+    // Check if this event was already tracked in this session
+    const eventKey = `${eventName}_${JSON.stringify(parameters || {})}`;
+    const trackedEvents = JSON.parse(sessionStorage.getItem('fb_tracked_events') || '[]');
+    
+    if (!trackedEvents.includes(eventKey)) {
+      window.fbq('track', eventName, parameters);
+      trackedEvents.push(eventKey);
+      sessionStorage.setItem('fb_tracked_events', JSON.stringify(trackedEvents));
+    }
+  }
+};
+
+// Track PageView only once per page load
+let pageViewTracked = false;
+export const trackPageView = () => {
+  if (typeof window !== 'undefined' && window.fbq && !pageViewTracked) {
+    window.fbq('track', 'PageView');
+    pageViewTracked = true;
   }
 };
 
 export const trackCustomEvent = (eventName: string, parameters?: any) => {
   if (typeof window !== 'undefined' && window.fbq) {
-    window.fbq('trackCustom', eventName, parameters);
+    // Check if this custom event was already tracked in this session
+    const eventKey = `custom_${eventName}_${JSON.stringify(parameters || {})}`;
+    const trackedEvents = JSON.parse(sessionStorage.getItem('fb_tracked_events') || '[]');
+    
+    if (!trackedEvents.includes(eventKey)) {
+      window.fbq('trackCustom', eventName, parameters);
+      trackedEvents.push(eventKey);
+      sessionStorage.setItem('fb_tracked_events', JSON.stringify(trackedEvents));
+    }
   }
 };
 
@@ -99,4 +141,17 @@ export const trackButtonClick = (buttonName: string, location: string) => {
     location: location,
     timestamp: new Date().toISOString()
   });
+};
+
+// Utility function to clear tracked events (useful for testing)
+export const clearTrackedEvents = () => {
+  if (typeof window !== 'undefined') {
+    sessionStorage.removeItem('fb_tracked_events');
+    pageViewTracked = false;
+  }
+};
+
+// Utility function to check if pixel is loaded
+export const isPixelLoaded = () => {
+  return typeof window !== 'undefined' && window.fbq;
 };
