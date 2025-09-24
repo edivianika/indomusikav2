@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 import { 
@@ -24,6 +24,11 @@ import {
 
 export default function JasaBuatLaguPage() {
   const [isPlaying, setIsPlaying] = useState<number | null>(null);
+  const [currentTrack, setCurrentTrack] = useState<any>(null);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isPlayerPlaying, setIsPlayerPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   const [portfolioExamples, setPortfolioExamples] = useState([
     {
@@ -91,6 +96,70 @@ export default function JasaBuatLaguPage() {
 
   const handlePlayExample = (id: number) => {
     setIsPlaying(isPlaying === id ? null : id);
+    // Set as current track in player
+    const track = portfolioExamples.find(t => t.id === id);
+    if (track) {
+      setCurrentTrack(track);
+      setIsPlayerPlaying(true);
+      if (audioRef.current) {
+        audioRef.current.play();
+      }
+    }
+  };
+
+  // Audio player functions
+  const handlePlayPause = () => {
+    if (audioRef.current) {
+      if (isPlayerPlaying) {
+        audioRef.current.pause();
+        setIsPlayerPlaying(false);
+      } else {
+        audioRef.current.play();
+        setIsPlayerPlaying(true);
+      }
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      setCurrentTime(audioRef.current.currentTime);
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (audioRef.current) {
+      setDuration(audioRef.current.duration);
+    }
+  };
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (audioRef.current) {
+      const seekTime = parseFloat(e.target.value);
+      audioRef.current.currentTime = seekTime;
+      setCurrentTime(seekTime);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (portfolioExamples.length > 0) {
+      const currentIndex = portfolioExamples.findIndex(track => track.id === currentTrack?.id);
+      const prevIndex = currentIndex > 0 ? currentIndex - 1 : portfolioExamples.length - 1;
+      setCurrentTrack(portfolioExamples[prevIndex]);
+    }
+  };
+
+  const handleNext = () => {
+    if (portfolioExamples.length > 0) {
+      const currentIndex = portfolioExamples.findIndex(track => track.id === currentTrack?.id);
+      const nextIndex = currentIndex < portfolioExamples.length - 1 ? currentIndex + 1 : 0;
+      setCurrentTrack(portfolioExamples[nextIndex]);
+    }
+  };
+
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
   // Fetch random portfolio examples from database
@@ -115,9 +184,14 @@ export default function JasaBuatLaguPage() {
             title: item.title || `Jingle ${item.business_type || 'UMKM'}`,
             description: item.description || `Jingle untuk ${item.business_type || 'UMKM'}`,
             genre: item.business_type || 'Pop',
-            duration: item.duration || '30s'
+            duration: item.duration || '30s',
+            audio_url: item.audio_url || null
           }));
           setPortfolioExamples(formattedData);
+          // Set first track as current track
+          if (formattedData.length > 0) {
+            setCurrentTrack(formattedData[0]);
+          }
         }
       } catch (error) {
         console.error('Error fetching portfolio examples:', error);
@@ -306,28 +380,61 @@ export default function JasaBuatLaguPage() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="bg-gray-800 rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8"
           >
+            <audio
+              ref={audioRef}
+              src={currentTrack?.audio_url}
+              onTimeUpdate={handleTimeUpdate}
+              onLoadedMetadata={handleLoadedMetadata}
+              onEnded={() => {
+                setIsPlayerPlaying(false);
+                handleNext();
+              }}
+              className="hidden"
+            />
             <div className="flex items-center space-x-4">
-              <button className="w-12 h-12 sm:w-14 sm:h-14 bg-green-600 hover:bg-green-700 text-white rounded-full flex items-center justify-center transition-colors flex-shrink-0">
-                <Play className="w-6 h-6 ml-0.5" />
+              <button 
+                onClick={handlePlayPause}
+                className="w-12 h-12 sm:w-14 sm:h-14 bg-green-600 hover:bg-green-700 text-white rounded-full flex items-center justify-center transition-colors flex-shrink-0"
+              >
+                {isPlayerPlaying ? (
+                  <div className="w-4 h-4 bg-white rounded-sm"></div>
+                ) : (
+                  <Play className="w-6 h-6 ml-0.5" />
+                )}
               </button>
               <div className="flex-1">
                 <div className="w-full bg-gray-600 rounded-full h-2 mb-2">
-                  <div className="bg-gray-400 h-2 rounded-full" style={{ width: '50%' }}></div>
+                  <div 
+                    className="bg-gray-400 h-2 rounded-full transition-all duration-300" 
+                    style={{ width: duration > 0 ? `${(currentTime / duration) * 100}%` : '0%' }}
+                  ></div>
                 </div>
                 <div className="flex justify-between text-white text-sm">
-                  <span>0:15</span>
-                  <span>0:30</span>
+                  <span>{formatTime(currentTime)}</span>
+                  <span>{formatTime(duration)}</span>
                 </div>
               </div>
               <div className="flex items-center space-x-2">
-                <button className="w-8 h-8 text-white hover:text-gray-300 transition-colors">
+                <button 
+                  onClick={handlePrevious}
+                  className="w-8 h-8 text-white hover:text-gray-300 transition-colors"
+                >
                   <SkipBack className="w-5 h-5" />
                 </button>
-                <button className="w-8 h-8 text-white hover:text-gray-300 transition-colors">
+                <button 
+                  onClick={handleNext}
+                  className="w-8 h-8 text-white hover:text-gray-300 transition-colors"
+                >
                   <SkipForward className="w-5 h-5" />
                 </button>
               </div>
             </div>
+            {currentTrack && (
+              <div className="mt-3 text-white">
+                <h4 className="font-semibold text-sm">{currentTrack.title}</h4>
+                <p className="text-xs text-gray-300">{currentTrack.description}</p>
+              </div>
+            )}
           </motion.div>
 
           {/* Song List */}
