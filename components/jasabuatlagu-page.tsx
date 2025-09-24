@@ -32,6 +32,8 @@ export default function JasaBuatLaguPage() {
   const [showPopup, setShowPopup] = useState(false);
   const [businessName, setBusinessName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [customerServices, setCustomerServices] = useState<any[]>([]);
+  const [currentCSIndex, setCurrentCSIndex] = useState(0);
 
   const [portfolioExamples, setPortfolioExamples] = useState([
     {
@@ -93,6 +95,61 @@ export default function JasaBuatLaguPage() {
     }
   ];
 
+  // Fetch customer services from database
+  useEffect(() => {
+    const fetchCustomerServices = async () => {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from('customer_services')
+          .select('*')
+          .eq('status', true)
+          .order('id');
+
+        if (error) {
+          console.error('Error fetching customer services:', error);
+          // Fallback to default CS if database fails
+          setCustomerServices([
+            { id: 1, nama: 'Ridha', nohp: '6289524955768' },
+            { id: 2, nama: 'Trisna', nohp: '6289604419509' },
+            { id: 3, nama: 'Lintang', nohp: '6285707538945' }
+          ]);
+          return;
+        }
+
+        if (data && data.length > 0) {
+          setCustomerServices(data);
+        } else {
+          // Fallback if no data
+          setCustomerServices([
+            { id: 1, nama: 'Ridha', nohp: '6289524955768' },
+            { id: 2, nama: 'Trisna', nohp: '6289604419509' },
+            { id: 3, nama: 'Lintang', nohp: '6285707538945' }
+          ]);
+        }
+      } catch (error) {
+        console.error('Error fetching customer services:', error);
+        // Fallback to default CS
+        setCustomerServices([
+          { id: 1, nama: 'Ridha', nohp: '6289524955768' },
+          { id: 2, nama: 'Trisna', nohp: '6289604419509' },
+          { id: 3, nama: 'Lintang', nohp: '6285707538945' }
+        ]);
+      }
+    };
+
+    fetchCustomerServices();
+  }, []);
+
+  // Rotate customer service
+  const getNextCustomerService = () => {
+    if (customerServices.length === 0) return null;
+    
+    const currentCS = customerServices[currentCSIndex];
+    setCurrentCSIndex((prevIndex) => (prevIndex + 1) % customerServices.length);
+    return currentCS;
+  };
+
   const handleWhatsAppClick = () => {
     setShowPopup(true);
   };
@@ -128,11 +185,16 @@ export default function JasaBuatLaguPage() {
         // Continue with WhatsApp redirect even if database fails
       }
 
+      // Get next customer service for rotation
+      const currentCS = getNextCustomerService();
+      const csPhone = currentCS?.nohp || '6289524955768'; // Fallback to Ridha's number
+      const csName = currentCS?.nama || 'Customer Service';
+      
       // Always redirect to WhatsApp regardless of database status
       const message = encodeURIComponent(
-        `Halo! Saya ${businessName.trim()}, tertarik dengan jasa buat lagu UMKM. Bisa info lebih detail tentang paket 2 lagu original dengan harga Rp199K?`
+        `Halo ${csName}! Saya ${businessName.trim()}, tertarik dengan jasa buat lagu UMKM. Bisa info lebih detail tentang paket 2 lagu original dengan harga Rp199K?`
       );
-      window.open(`https://wa.me/6281234567890?text=${message}`, '_blank');
+      window.open(`https://wa.me/${csPhone}?text=${message}`, '_blank');
       
       // Close popup
       setShowPopup(false);
@@ -141,10 +203,14 @@ export default function JasaBuatLaguPage() {
     } catch (error) {
       console.error('Unexpected error:', error);
       // Even if there's an unexpected error, still try to redirect to WhatsApp
+      const currentCS = getNextCustomerService();
+      const csPhone = currentCS?.nohp || '6289524955768'; // Fallback to Ridha's number
+      const csName = currentCS?.nama || 'Customer Service';
+      
       const message = encodeURIComponent(
-        `Halo! Saya ${businessName.trim()}, tertarik dengan jasa buat lagu UMKM. Bisa info lebih detail tentang paket 2 lagu original dengan harga Rp199K?`
+        `Halo ${csName}! Saya ${businessName.trim()}, tertarik dengan jasa buat lagu UMKM. Bisa info lebih detail tentang paket 2 lagu original dengan harga Rp199K?`
       );
-      window.open(`https://wa.me/6281234567890?text=${message}`, '_blank');
+      window.open(`https://wa.me/${csPhone}?text=${message}`, '_blank');
       
       setShowPopup(false);
       setBusinessName('');
