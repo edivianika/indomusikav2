@@ -163,6 +163,12 @@ export default function JasaBuatLaguPage() {
     setIsSubmitting(true);
     
     try {
+      // Get next customer service for rotation
+      const currentCS = getNextCustomerService();
+      const csPhone = currentCS?.nohp || '6289524955768'; // Fallback to Ridha's number
+      const csName = currentCS?.nama || 'Customer Service';
+      const csId = currentCS?.id || 1; // Fallback to Ridha's ID
+
       // Try to save to database, but don't block if it fails
       try {
         const supabase = createClient();
@@ -172,7 +178,8 @@ export default function JasaBuatLaguPage() {
             {
               business_name: businessName.trim(),
               created_at: new Date().toISOString(),
-              status: 'new'
+              status: 'new',
+              cs_id: csId
             }
           ]);
 
@@ -185,11 +192,6 @@ export default function JasaBuatLaguPage() {
         // Continue with WhatsApp redirect even if database fails
       }
 
-      // Get next customer service for rotation
-      const currentCS = getNextCustomerService();
-      const csPhone = currentCS?.nohp || '6289524955768'; // Fallback to Ridha's number
-      const csName = currentCS?.nama || 'Customer Service';
-      
       // Always redirect to WhatsApp regardless of database status
       const message = encodeURIComponent(
         `Halo ${csName}! Saya ${businessName.trim()}, tertarik dengan jasa buat lagu UMKM. Bisa info lebih detail tentang paket 2 lagu original dengan harga Rp199K?`
