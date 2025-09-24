@@ -99,16 +99,22 @@ export default function JasaBuatLaguPage() {
     if (track) {
       // Set as current track in player
       setCurrentTrack(track);
-      setIsPlayerPlaying(true);
       setIsPlaying(id);
+      setIsPlayerPlaying(true);
       
       // Play audio immediately
       if (audioRef.current) {
-        audioRef.current.src = track.audio_url;
-        audioRef.current.load();
-        audioRef.current.play().catch(error => {
-          console.error('Error playing audio:', error);
-        });
+        // If it's the same track, just toggle play/pause
+        if (currentTrack?.id === id && isPlayerPlaying) {
+          audioRef.current.pause();
+          setIsPlayerPlaying(false);
+          setIsPlaying(null);
+        } else {
+          // Play the track
+          audioRef.current.play().catch(error => {
+            console.error('Error playing audio:', error);
+          });
+        }
       }
     }
   };
@@ -228,10 +234,43 @@ export default function JasaBuatLaguPage() {
   // Update audio source when currentTrack changes
   useEffect(() => {
     if (audioRef.current && currentTrack?.audio_url) {
+      // Pause current audio first
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      
+      // Set new source
       audioRef.current.src = currentTrack.audio_url;
       audioRef.current.load();
+      
+      // Reset time tracking
+      setCurrentTime(0);
+      setDuration(0);
     }
   }, [currentTrack]);
+
+  // Sync isPlayerPlaying with actual audio state
+  useEffect(() => {
+    if (audioRef.current) {
+      const audio = audioRef.current;
+      
+      const handlePlay = () => setIsPlayerPlaying(true);
+      const handlePause = () => setIsPlayerPlaying(false);
+      const handleEnded = () => {
+        setIsPlayerPlaying(false);
+        setIsPlaying(null);
+      };
+      
+      audio.addEventListener('play', handlePlay);
+      audio.addEventListener('pause', handlePause);
+      audio.addEventListener('ended', handleEnded);
+      
+      return () => {
+        audio.removeEventListener('play', handlePlay);
+        audio.removeEventListener('pause', handlePause);
+        audio.removeEventListener('ended', handleEnded);
+      };
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
@@ -417,12 +456,8 @@ export default function JasaBuatLaguPage() {
               onTimeUpdate={handleTimeUpdate}
               onLoadedMetadata={handleLoadedMetadata}
               onEnded={() => {
-                setIsPlayerPlaying(false);
-                setIsPlaying(null);
                 handleNext();
               }}
-              onPlay={() => setIsPlayerPlaying(true)}
-              onPause={() => setIsPlayerPlaying(false)}
               className="hidden"
             />
             <div className="flex items-center space-x-4">
