@@ -142,7 +142,7 @@ export default function JasaBuatLaguPage() {
     fetchCustomerServices();
   }, []);
 
-  // Initialize current CS index from database
+  // Initialize current CS index from database with fallback
   useEffect(() => {
     const initializeCSIndex = async () => {
       if (customerServices.length > 0) {
@@ -150,8 +150,8 @@ export default function JasaBuatLaguPage() {
           const supabase = createClient();
           const { data, error } = await supabase.rpc('get_current_cs_index');
           
-          if (error) {
-            console.warn('Error getting current CS index:', error);
+          if (error || data === null || data === undefined) {
+            console.warn('Database function not available, using default index 0:', error);
             setCurrentCSIndex(0);
             return;
           }
@@ -161,7 +161,7 @@ export default function JasaBuatLaguPage() {
           
           console.log('CS Index initialized from database:', index);
         } catch (error) {
-          console.warn('Error initializing CS index:', error);
+          console.warn('Error initializing CS index, using default:', error);
           setCurrentCSIndex(0);
         }
       }
@@ -170,21 +170,29 @@ export default function JasaBuatLaguPage() {
     initializeCSIndex();
   }, [customerServices]);
 
-  // Rotate customer service using database
+  // Rotate customer service using database with robust fallback
   const getNextCustomerService = async () => {
     if (customerServices.length === 0) return null;
     
     try {
       const supabase = createClient();
       
-      // Get next CS index atomically from database
+      // Try to get next CS index from database
       const { data: nextIndex, error } = await supabase.rpc('get_next_cs_index');
       
-      if (error) {
-        console.error('Error getting next CS index:', error);
+      if (error || nextIndex === null || nextIndex === undefined) {
+        console.warn('Database function not available, using local rotation:', error);
         // Fallback to local rotation
         const fallbackIndex = (currentCSIndex + 1) % customerServices.length;
         setCurrentCSIndex(fallbackIndex);
+        
+        console.log('CS Rotation Debug (Local Fallback):', {
+          fallbackIndex: fallbackIndex,
+          currentCS: customerServices[fallbackIndex],
+          totalCS: customerServices.length,
+          method: 'local_fallback'
+        });
+        
         return customerServices[fallbackIndex];
       }
       
@@ -206,10 +214,18 @@ export default function JasaBuatLaguPage() {
       return currentCS;
       
     } catch (error) {
-      console.error('Error in CS rotation:', error);
+      console.warn('Error in CS rotation, using local fallback:', error);
       // Fallback to local rotation
       const fallbackIndex = (currentCSIndex + 1) % customerServices.length;
       setCurrentCSIndex(fallbackIndex);
+      
+      console.log('CS Rotation Debug (Error Fallback):', {
+        fallbackIndex: fallbackIndex,
+        currentCS: customerServices[fallbackIndex],
+        totalCS: customerServices.length,
+        method: 'error_fallback'
+      });
+      
       return customerServices[fallbackIndex];
     }
   };
