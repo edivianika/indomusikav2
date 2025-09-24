@@ -1,6 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { createClient } from '@/lib/supabase/client';
 import { 
   Music, 
   CheckCircle, 
@@ -16,13 +17,15 @@ import {
   Users,
   TrendingUp,
   Heart,
-  Sparkles
+  Sparkles,
+  SkipBack,
+  SkipForward
 } from 'lucide-react';
 
 export default function JasaBuatLaguPage() {
   const [isPlaying, setIsPlaying] = useState<number | null>(null);
 
-  const portfolioExamples = [
+  const [portfolioExamples, setPortfolioExamples] = useState([
     {
       id: 1,
       title: "Jingle Laundry Express Ponorogo",
@@ -44,7 +47,7 @@ export default function JasaBuatLaguPage() {
       genre: "EDM",
       duration: "35s"
     }
-  ];
+  ]);
 
   const benefits = [
     {
@@ -89,6 +92,40 @@ export default function JasaBuatLaguPage() {
   const handlePlayExample = (id: number) => {
     setIsPlaying(isPlaying === id ? null : id);
   };
+
+  // Fetch random portfolio examples from database
+  useEffect(() => {
+    const fetchPortfolioExamples = async () => {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from('jingle_samples')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        if (error) {
+          console.error('Error fetching portfolio examples:', error);
+          return;
+        }
+
+        if (data && data.length > 0) {
+          const formattedData = data.map((item, index) => ({
+            id: item.id,
+            title: item.title || `Jingle ${item.business_type || 'UMKM'}`,
+            description: item.description || `Jingle untuk ${item.business_type || 'UMKM'}`,
+            genre: item.business_type || 'Pop',
+            duration: item.duration || '30s'
+          }));
+          setPortfolioExamples(formattedData);
+        }
+      } catch (error) {
+        console.error('Error fetching portfolio examples:', error);
+      }
+    };
+
+    fetchPortfolioExamples();
+  }, []);
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
@@ -245,57 +282,93 @@ export default function JasaBuatLaguPage() {
       </section>
 
       {/* Portfolio Examples */}
-      <section className="py-8 sm:py-12">
+      <section className="py-8 sm:py-12 bg-gray-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-6 sm:mb-8"
+            className="text-center mb-8 sm:mb-10"
           >
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
-              ✨ Contoh Portfolio:
-            </h2>
+            <div className="flex items-center justify-center space-x-2 mb-4">
+              <span className="text-yellow-500">✨</span>
+              <span className="text-yellow-500">✨</span>
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
+                Contoh Portfolio
+              </h2>
+            </div>
           </motion.div>
 
-          <div className="space-y-4">
+          {/* Audio Player */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="bg-gray-800 rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8"
+          >
+            <div className="flex items-center space-x-4">
+              <button className="w-12 h-12 sm:w-14 sm:h-14 bg-green-600 hover:bg-green-700 text-white rounded-full flex items-center justify-center transition-colors flex-shrink-0">
+                <Play className="w-6 h-6 ml-0.5" />
+              </button>
+              <div className="flex-1">
+                <div className="w-full bg-gray-600 rounded-full h-2 mb-2">
+                  <div className="bg-gray-400 h-2 rounded-full" style={{ width: '50%' }}></div>
+                </div>
+                <div className="flex justify-between text-white text-sm">
+                  <span>0:15</span>
+                  <span>0:30</span>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <button className="w-8 h-8 text-white hover:text-gray-300 transition-colors">
+                  <SkipBack className="w-5 h-5" />
+                </button>
+                <button className="w-8 h-8 text-white hover:text-gray-300 transition-colors">
+                  <SkipForward className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Song List */}
+          <div className="space-y-3">
             {portfolioExamples.map((example, index) => (
               <motion.div
                 key={example.id}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                className="bg-white border border-gray-200 rounded-lg p-4 sm:p-5 hover:shadow-md transition-shadow"
+                transition={{ duration: 0.6, delay: 0.3 + index * 0.1 }}
+                className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 hover:shadow-md transition-shadow"
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
+                  <div className="flex items-center space-x-4 flex-1 min-w-0">
                     <button
                       onClick={() => handlePlayExample(example.id)}
-                      className="w-10 h-10 sm:w-12 sm:h-12 bg-green-600 hover:bg-green-700 text-white rounded-full flex items-center justify-center transition-colors flex-shrink-0"
+                      className="w-12 h-12 sm:w-14 sm:h-14 bg-green-600 hover:bg-green-700 text-white rounded-full flex items-center justify-center transition-colors flex-shrink-0"
                     >
                       {isPlaying === example.id ? (
-                        <div className="w-3 h-3 sm:w-4 sm:h-4 bg-white rounded-sm"></div>
+                        <div className="w-4 h-4 bg-white rounded-sm"></div>
                       ) : (
-                        <Play className="w-4 h-4 sm:w-5 sm:h-5 ml-0.5" />
+                        <Play className="w-6 h-6 ml-0.5" />
                       )}
                     </button>
                     <div className="min-w-0 flex-1">
-                      <h3 className="text-sm sm:text-base font-semibold text-gray-900 truncate">{example.title}</h3>
-                      <p className="text-xs sm:text-sm text-gray-600 mb-1">{example.description}</p>
-                      <div className="flex items-center space-x-3">
-                        <span className="text-xs text-gray-500">{example.genre}</span>
-                        <span className="text-xs text-gray-500">•</span>
-                        <span className="text-xs text-gray-500">{example.duration}</span>
+                      <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1">{example.title}</h3>
+                      <p className="text-sm text-gray-600 mb-2">{example.description}</p>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-gray-500">{example.genre}</span>
+                        <span className="text-sm text-gray-500">•</span>
+                        <span className="text-sm text-gray-500">{example.duration}</span>
                       </div>
                     </div>
                   </div>
-                  <div className="text-right flex-shrink-0 ml-2">
-                    <div className="flex items-center space-x-1 text-yellow-500">
+                  <div className="text-right flex-shrink-0 ml-4">
+                    <div className="flex items-center space-x-1 text-yellow-500 mb-1">
                       {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="w-3 h-3 sm:w-4 sm:h-4 fill-current" />
+                        <Star key={i} className="w-4 h-4 fill-current" />
                       ))}
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">5.0</p>
+                    <p className="text-sm text-gray-500">5.0</p>
                   </div>
                 </div>
               </motion.div>
