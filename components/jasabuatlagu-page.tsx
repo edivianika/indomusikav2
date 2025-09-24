@@ -358,20 +358,6 @@ export default function JasaBuatLaguPage() {
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
-      {/* Navigation */}
-      <nav className="bg-white border-b border-gray-100 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-14 sm:h-16">
-            <div className="flex items-center">
-              <h1 className="text-lg sm:text-xl font-bold text-gray-900">Indomusika</h1>
-            </div>
-            <div className="flex items-center space-x-2 sm:space-x-4">
-              <a href="/" className="text-sm sm:text-base text-gray-600 hover:text-gray-900 transition-colors px-2 py-1 rounded-md hover:bg-gray-50">Beranda</a>
-              <a href="/portfolio" className="text-sm sm:text-base text-gray-600 hover:text-gray-900 transition-colors px-2 py-1 rounded-md hover:bg-gray-50">Portfolio</a>
-            </div>
-          </div>
-        </div>
-      </nav>
 
       {/* Hero Section */}
       <section className="py-8 sm:py-12 lg:py-16">
@@ -455,12 +441,13 @@ export default function JasaBuatLaguPage() {
 
             {/* Primary CTA Button */}
             <div className="mb-6 sm:mb-8">
-              <button
-                onClick={handleWhatsAppClick}
-                className="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-lg text-base sm:text-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl w-full sm:w-auto"
-              >
-                Bikin Lagu untuk Usaha Saya Sekarang
-              </button>
+                <button
+                  onClick={handleWhatsAppClick}
+                  className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-full text-base transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg flex items-center space-x-2 mx-auto"
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  <span>Bikin Lagu untuk Usaha Saya Sekarang</span>
+                </button>
             </div>
           </motion.div>
         </div>
@@ -710,9 +697,10 @@ export default function JasaBuatLaguPage() {
 
               <button
                 onClick={handleWhatsAppClick}
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-xl text-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl mb-4"
+                className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-full text-base transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg flex items-center space-x-2 mx-auto"
               >
-                Pesan Sekarang - Cuma Rp199K
+                <MessageCircle className="w-5 h-5" />
+                <span>Pesan Sekarang - Cuma Rp199K</span>
               </button>
               
               <div className="flex items-center justify-center space-x-2 text-sm text-gray-600">
@@ -740,14 +728,13 @@ export default function JasaBuatLaguPage() {
               <span className="block sm:inline">dan mulai bikin lagu bisnis kamu sendiri bareng Indomusika 🎶</span>
             </p>
             
-            <button
-              onClick={handleWhatsAppClick}
-              className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-full text-sm sm:text-base transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2 sm:space-x-3 mx-auto"
-            >
-              <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span>Chat WhatsApp Sekarang</span>
-              <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
+                <button
+                  onClick={handleWhatsAppClick}
+                  className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-full text-base transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg flex items-center space-x-2 mx-auto"
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  <span>Chat WhatsApp Sekarang</span>
+                </button>
             
             <p className="text-xs sm:text-sm text-gray-400 mt-3 sm:mt-4">
               💬 Response dalam 5 menit • 🎵 Konsultasi gratis • ⚡ Proses cepat
