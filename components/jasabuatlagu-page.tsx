@@ -497,8 +497,8 @@ export default function JasaBuatLaguPage() {
             {/* Hook Headline */}
             <div className="mb-6 sm:mb-8">
               <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight mb-4">
-                <span className="block">Bisnis sepi? Jangan cuma promo.</span>
-                <span className="block text-green-600 mt-2">Biar usaha kamu ingat lewat lagu!</span>
+                <span className="block">Bisnis sepi? <br /> Jangan cuma promo.</span>
+                <span className="block text-green-600 mt-2">Biar usaha kamu <u>ingat lewat lagu!</u></span>
               </h1>
             </div>
 
