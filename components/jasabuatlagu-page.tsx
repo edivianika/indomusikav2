@@ -397,23 +397,16 @@ export default function JasaBuatLaguPage() {
               </div>
             </div>
 
-            {/* Brand Examples */}
-            <div className="mb-6 sm:mb-8">
-              <div className="flex items-center justify-center space-x-6 sm:space-x-8">
-                <div className="text-center">
-                  <div className="text-lg sm:text-xl font-bold text-gray-900 mb-1">Indomie</div>
-                  <div className="w-full h-0.5 bg-green-600"></div>
+                {/* Brand Examples */}
+                <div className="mb-6 sm:mb-8">
+                  <div className="flex items-center justify-center">
+                    <img 
+                      src="/brand.png" 
+                      alt="Indomie Tokopedia Grab" 
+                      className="h-12 sm:h-16 w-auto object-contain"
+                    />
+                  </div>
                 </div>
-                <div className="text-center">
-                  <div className="text-lg sm:text-xl font-bold text-gray-900 mb-1">Tokopedia</div>
-                  <div className="w-2 h-2 bg-green-600 rounded-full mx-auto"></div>
-                </div>
-                <div className="text-center">
-                  <div className="text-lg sm:text-xl font-bold text-gray-900 mb-1">Grab</div>
-                  <div className="w-2 h-2 bg-green-600 rounded-full mx-auto"></div>
-                </div>
-              </div>
-            </div>
 
                 {/* Solution Box */}
                 <div className="bg-gray-100 rounded-xl p-4 sm:p-6 mb-6 sm:mb-8">
