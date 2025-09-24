@@ -29,6 +29,9 @@ export default function JasaBuatLaguPage() {
   const [duration, setDuration] = useState(0);
   const [isPlayerPlaying, setIsPlayerPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const [showPopup, setShowPopup] = useState(false);
+  const [businessName, setBusinessName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [portfolioExamples, setPortfolioExamples] = useState([
     {
@@ -91,10 +94,51 @@ export default function JasaBuatLaguPage() {
   ];
 
   const handleWhatsAppClick = () => {
-    const message = encodeURIComponent(
-      "Halo! Saya tertarik dengan jasa buat lagu UMKM. Bisa info lebih detail tentang paket 2 lagu original dengan harga Rp199K?"
-    );
-    window.open(`https://wa.me/6281234567890?text=${message}`, '_blank');
+    setShowPopup(true);
+  };
+
+  const handleSubmitBusinessName = async () => {
+    if (!businessName.trim()) {
+      alert('Mohon masukkan nama usaha Anda');
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('business_inquiries')
+        .insert([
+          {
+            business_name: businessName.trim(),
+            created_at: new Date().toISOString(),
+            status: 'new'
+          }
+        ]);
+
+      if (error) {
+        console.error('Error saving business name:', error);
+        alert('Terjadi kesalahan. Silakan coba lagi.');
+        return;
+      }
+
+      // Redirect to WhatsApp with business name
+      const message = encodeURIComponent(
+        `Halo! Saya ${businessName.trim()}, tertarik dengan jasa buat lagu UMKM. Bisa info lebih detail tentang paket 2 lagu original dengan harga Rp199K?`
+      );
+      window.open(`https://wa.me/6281234567890?text=${message}`, '_blank');
+      
+      // Close popup
+      setShowPopup(false);
+      setBusinessName('');
+      
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Terjadi kesalahan. Silakan coba lagi.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handlePlayExample = (id: number) => {
@@ -760,6 +804,60 @@ export default function JasaBuatLaguPage() {
           </div>
         </div>
       </footer>
+
+      {/* Business Name Popup */}
+      {showPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="bg-white rounded-xl p-6 w-full max-w-md"
+          >
+            <h3 className="text-lg font-bold text-gray-900 mb-4 text-center">
+              Sebelum lanjut ke WhatsApp
+            </h3>
+            <p className="text-sm text-gray-600 mb-4 text-center">
+              Masukkan nama usaha Anda agar kami bisa memberikan pelayanan yang lebih personal
+            </p>
+            
+            <div className="mb-4">
+              <label htmlFor="businessName" className="block text-sm font-medium text-gray-700 mb-2">
+                Nama Usaha
+              </label>
+              <input
+                type="text"
+                id="businessName"
+                value={businessName}
+                onChange={(e) => setBusinessName(e.target.value)}
+                placeholder="Contoh: Warung Makan Sederhana"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                disabled={isSubmitting}
+              />
+            </div>
+            
+            <div className="flex space-x-3">
+              <button
+                onClick={() => {
+                  setShowPopup(false);
+                  setBusinessName('');
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                disabled={isSubmitting}
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleSubmitBusinessName}
+                disabled={isSubmitting}
+                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? 'Menyimpan...' : 'Lanjut ke WhatsApp'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
