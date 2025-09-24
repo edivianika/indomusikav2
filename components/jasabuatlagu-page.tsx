@@ -399,11 +399,16 @@ export default function JasaBuatLaguPage() {
 
                 {/* Brand Examples */}
                 <div className="mb-6 sm:mb-8">
+                  <div className="text-center mb-4">
+                    <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
+                      Lihat deh brand besar: <span className="font-semibold">Indomie, Tokopedia, Grab</span>. Semua punya jingle. Bahkan cukup dengar 3 detik, kita langsung inget.
+                    </p>
+                  </div>
                   <div className="flex items-center justify-center">
                     <img 
                       src="/brand.png" 
                       alt="Indomie Tokopedia Grab" 
-                      className="h-12 sm:h-16 w-auto object-contain"
+                      className="h-20 sm:h-24 md:h-28 w-auto object-contain"
                     />
                   </div>
                 </div>
