@@ -117,57 +117,84 @@ export default function JasaBuatLaguPage() {
           >
             {/* Hook Headline */}
             <div className="mb-6 sm:mb-8">
-              <div className="flex justify-center mb-3">
-                <span className="text-2xl sm:text-3xl">🎶</span>
-              </div>
-              <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
-                <span className="block">"Bisnis sepi? Jangan cuma pasang promo.</span>
-                <span className="block text-green-600 mt-1 sm:mt-2">Bikin orang otomatis inget usaha</span>
-                <span className="block text-green-600">kamu lewat lagunya!"</span>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight mb-4">
+                <span className="block">Bisnis sepi? Jangan cuma promo.</span>
+                <span className="block text-green-600 mt-2">Biar usaha kamu ingat lewat lagu!</span>
               </h1>
+            </div>
+
+            {/* CTA Banner */}
+            <div className="mb-6 sm:mb-8">
+              <div className="bg-gray-100 rounded-lg px-4 py-3 sm:px-6 sm:py-4 inline-block">
+                <p className="text-sm sm:text-base font-semibold text-gray-900">
+                  Pesan Jingle Rp199K - Bayar Setelah Jadi
+                </p>
+              </div>
             </div>
 
             {/* Opening Problem */}
             <div className="mb-6 sm:mb-8">
               <div className="max-w-2xl mx-auto">
-                <p className="text-sm sm:text-base md:text-lg text-gray-700 leading-relaxed mb-3 sm:mb-4">
+                <p className="text-sm sm:text-base md:text-lg text-gray-700 leading-relaxed">
                   Pernah nggak, iklan udah jalan, promosi udah gencar, tapi orang lupa sama brand kamu?<br className="hidden sm:block" />
                   <span className="block sm:inline">Mereka mampir sekali, habis itu hilang.</span>
-                </p>
-                <p className="text-sm sm:text-base md:text-lg text-gray-700 leading-relaxed">
-                  <strong className="text-gray-900 font-semibold">Kenapa? Karena nggak ada yang nempel di kepala mereka.</strong>
                 </p>
               </div>
             </div>
 
-            {/* Problem → Solution */}
-            <div className="bg-gray-50 rounded-xl p-4 sm:p-6 mb-6 sm:mb-8">
-              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-3 sm:mb-4 text-center">
-                Lihat deh brand besar: Indomie, Tokopedia, Grab.
-              </h2>
-              <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4 text-center">
-                Semua punya jingle.<br className="hidden sm:block" />
-                <span className="block sm:inline">Bahkan cukup dengar 3 detik, kita langsung inget.</span>
-              </p>
-              <div className="bg-white rounded-lg p-3 sm:p-4 border border-gray-200">
-                <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 text-center">
-                  Nah, Indomusika bantuin UMKM kayak kamu bikin lagu/jingle original yang:
-                </h3>
-                <div className="space-y-2 sm:space-y-3">
-                  <div className="flex items-start space-x-2 sm:space-x-3">
-                    <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs sm:text-sm text-gray-700 leading-relaxed">Bikin nama usaha kamu langsung nempel di kepala orang</p>
-                  </div>
-                  <div className="flex items-start space-x-2 sm:space-x-3">
-                    <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs sm:text-sm text-gray-700 leading-relaxed">Bisa dipakai di iklan, konten IG/TikTok, sampai diputar di toko/kedai kamu sendiri</p>
-                  </div>
-                  <div className="flex items-start space-x-2 sm:space-x-3">
-                    <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs sm:text-sm text-gray-700 leading-relaxed">Simple, catchy, dan sesuai gaya bisnismu (koplo, pop, EDM, akustik, apa aja bisa!)</p>
-                  </div>
+            {/* Brand Examples */}
+            <div className="mb-6 sm:mb-8">
+              <div className="flex items-center justify-center space-x-6 sm:space-x-8">
+                <div className="text-center">
+                  <div className="text-lg sm:text-xl font-bold text-gray-900 mb-1">Indomie</div>
+                  <div className="w-full h-0.5 bg-green-600"></div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg sm:text-xl font-bold text-gray-900 mb-1">Tokopedia</div>
+                  <div className="w-2 h-2 bg-green-600 rounded-full mx-auto"></div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg sm:text-xl font-bold text-gray-900 mb-1">Grab</div>
+                  <div className="w-2 h-2 bg-green-600 rounded-full mx-auto"></div>
                 </div>
               </div>
+            </div>
+
+            {/* Solution Box */}
+            <div className="bg-gray-100 rounded-xl p-4 sm:p-6 mb-6 sm:mb-8">
+              <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 sm:mb-5 text-center">
+                Indomusika siap bantu bikin jingle original agar usaha kamu:
+              </h3>
+              <div className="space-y-3 sm:space-y-4">
+                <div className="flex items-center justify-center space-x-3">
+                  <div className="w-6 h-6 bg-gray-900 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs">🎧</span>
+                  </div>
+                  <p className="text-sm sm:text-base text-gray-900 font-medium">Mudah diingat pelanggan</p>
+                </div>
+                <div className="flex items-center justify-center space-x-3">
+                  <div className="w-6 h-6 bg-gray-900 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs">🎧</span>
+                  </div>
+                  <p className="text-sm sm:text-base text-gray-900 font-medium">Beda dari kompetitor</p>
+                </div>
+                <div className="flex items-center justify-center space-x-3">
+                  <div className="w-6 h-6 bg-gray-900 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs">🎧</span>
+                  </div>
+                  <p className="text-sm sm:text-base text-gray-900 font-medium">Top of mind di kepala orang</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Primary CTA Button */}
+            <div className="mb-6 sm:mb-8">
+              <button
+                onClick={handleWhatsAppClick}
+                className="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-lg text-base sm:text-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl w-full sm:w-auto"
+              >
+                Bikin Lagu untuk Usaha Saya Sekarang
+              </button>
             </div>
           </motion.div>
         </div>
