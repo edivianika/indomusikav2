@@ -50,32 +50,32 @@ export default function JasaBuatLaguPage() {
     {
       icon: Music,
       title: "2 Lagu Original",
-      description: "Custom sesuai brand dan gaya bisnis kamu"
+      description: "Custom sesuai brand"
     },
     {
       icon: Gift,
       title: "Free Lirik",
-      description: "Mudah dinyanyiin, gampang viral"
+      description: "Sampai cocok"
     },
     {
       icon: Zap,
       title: "Free Revisi",
-      description: "Sampai cocok dengan keinginan kamu"
+      description: "Sampai cocok"
     },
     {
       icon: Shield,
-      title: "Hak Pakai Komersial",
-      description: "Aman buat usaha kamu, bisa dipakai selamanya"
+      title: "Hak Komersial",
+      description: "Selamanya aman"
     },
     {
       icon: Clock,
-      title: "Delivery Cepat",
-      description: "Nggak pake lama, bisa langsung dipake"
+      title: "Cepat",
+      description: "Langsung bisa dipakai"
     },
     {
       icon: Heart,
       title: "Bayar Setelah Jadi",
-      description: "100% aman, kamu puas baru bayar"
+      description: "100% aman"
     }
   ];
 
@@ -201,54 +201,46 @@ export default function JasaBuatLaguPage() {
       </section>
 
       {/* Benefits Section */}
-      <section className="py-8 sm:py-12 bg-gray-50">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-8 sm:py-12 bg-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-center mb-8 sm:mb-10"
           >
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
-              💡 Paket UMKM Indomusika:
-            </h2>
-            <p className="text-sm sm:text-base md:text-lg text-gray-700">
-              2 Lagu Original (custom sesuai brand)
+            <div className="flex items-center justify-center space-x-3 mb-4">
+              <span className="text-2xl sm:text-3xl">💡</span>
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
+                Paket UMKM Indomusika
+              </h2>
+            </div>
+            <p className="text-sm sm:text-base text-gray-700">
+              2 Lagu Original • Sesuai brand kamu
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
             {benefits.map((benefit, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.3 + index * 0.1 }}
-                className="bg-white rounded-lg p-4 sm:p-5 border border-gray-200 hover:shadow-md transition-shadow"
+                className="bg-white border border-gray-200 rounded-lg p-4 sm:p-5 hover:shadow-md transition-shadow text-center"
               >
-                <div className="flex items-center space-x-3 sm:space-x-4">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <benefit.icon className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
+                <div className="flex flex-col items-center space-y-3">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 bg-green-100 rounded-full flex items-center justify-center">
+                    <benefit.icon className="w-6 h-6 sm:w-7 sm:h-7 text-green-600" />
                   </div>
-                  <div className="min-w-0">
-                    <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-1">{benefit.title}</h3>
-                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">{benefit.description}</p>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-1">{benefit.title}</h3>
+                    <p className="text-xs sm:text-sm text-gray-600">{benefit.description}</p>
                   </div>
                 </div>
               </motion.div>
             ))}
           </div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.8 }}
-            className="text-center mt-6 sm:mt-8"
-          >
-            <p className="text-base sm:text-lg font-bold text-gray-900">
-              Cuma sekali bayar → bisa dipakai selamanya!
-            </p>
-          </motion.div>
         </div>
       </section>
 
