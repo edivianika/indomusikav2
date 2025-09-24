@@ -34,14 +34,7 @@ export default function JasaBuatLaguPage() {
   const [businessName, setBusinessName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customerServices, setCustomerServices] = useState<any[]>([]);
-  const [currentCSIndex, setCurrentCSIndex] = useState(() => {
-    // Initialize from sessionStorage or default to 0
-    if (typeof window !== 'undefined') {
-      const savedIndex = sessionStorage.getItem('cs_rotation_index');
-      return savedIndex ? parseInt(savedIndex, 10) : 0;
-    }
-    return 0;
-  });
+  const [currentCSIndex, setCurrentCSIndex] = useState(0);
 
   const [portfolioExamples, setPortfolioExamples] = useState([
     {
@@ -149,47 +142,76 @@ export default function JasaBuatLaguPage() {
     fetchCustomerServices();
   }, []);
 
-  // Sync sessionStorage with state when customerServices change
+  // Initialize current CS index from database
   useEffect(() => {
-    if (customerServices.length > 0 && typeof window !== 'undefined') {
-      const savedIndex = sessionStorage.getItem('cs_rotation_index');
-      if (savedIndex) {
-        const parsedIndex = parseInt(savedIndex, 10);
-        // Ensure index is within bounds
-        const validIndex = parsedIndex % customerServices.length;
-        setCurrentCSIndex(validIndex);
-        sessionStorage.setItem('cs_rotation_index', validIndex.toString());
+    const initializeCSIndex = async () => {
+      if (customerServices.length > 0) {
+        try {
+          const supabase = createClient();
+          const { data, error } = await supabase.rpc('get_current_cs_index');
+          
+          if (error) {
+            console.warn('Error getting current CS index:', error);
+            setCurrentCSIndex(0);
+            return;
+          }
+          
+          const index = data || 0;
+          setCurrentCSIndex(index);
+          
+          console.log('CS Index initialized from database:', index);
+        } catch (error) {
+          console.warn('Error initializing CS index:', error);
+          setCurrentCSIndex(0);
+        }
       }
-    }
+    };
+
+    initializeCSIndex();
   }, [customerServices]);
 
-  // Rotate customer service
-  const getNextCustomerService = () => {
+  // Rotate customer service using database
+  const getNextCustomerService = async () => {
     if (customerServices.length === 0) return null;
     
-    // Get the current CS first
-    const currentCS = customerServices[currentCSIndex];
-    
-    // Update the index for next time (but don't wait for state update)
-    const nextIndex = (currentCSIndex + 1) % customerServices.length;
-    setCurrentCSIndex(nextIndex);
-    
-    // Save to sessionStorage for persistence across page loads
-    if (typeof window !== 'undefined') {
-      sessionStorage.setItem('cs_rotation_index', nextIndex.toString());
+    try {
+      const supabase = createClient();
+      
+      // Get next CS index atomically from database
+      const { data: nextIndex, error } = await supabase.rpc('get_next_cs_index');
+      
+      if (error) {
+        console.error('Error getting next CS index:', error);
+        // Fallback to local rotation
+        const fallbackIndex = (currentCSIndex + 1) % customerServices.length;
+        setCurrentCSIndex(fallbackIndex);
+        return customerServices[fallbackIndex];
+      }
+      
+      // Update local state
+      setCurrentCSIndex(nextIndex);
+      
+      // Get the CS for this index
+      const currentCS = customerServices[nextIndex];
+      
+      // Debug logging
+      console.log('CS Rotation Debug (Database):', {
+        databaseIndex: nextIndex,
+        currentCS: currentCS,
+        totalCS: customerServices.length,
+        allCS: customerServices.map(cs => ({ id: cs.id, nama: cs.nama })),
+        method: 'database_atomic'
+      });
+      
+      return currentCS;
+      
+    } catch (error) {
+      console.error('Error in CS rotation:', error);
+      // Fallback to local rotation
+      const fallbackIndex = (currentCSIndex + 1) % customerServices.length;
+      setCurrentCSIndex(fallbackIndex);
+      return customerServices[fallbackIndex];
     }
-    
-    // Debug logging
-    console.log('CS Rotation Debug:', {
-      currentIndex: currentCSIndex,
-      nextIndex: nextIndex,
-      currentCS: currentCS,
-      totalCS: customerServices.length,
-      allCS: customerServices.map(cs => ({ id: cs.id, nama: cs.nama })),
-      sessionStorage: typeof window !== 'undefined' ? sessionStorage.getItem('cs_rotation_index') : 'N/A'
-    });
-    
-    return currentCS;
   };
 
   const handleWhatsAppClick = () => {
@@ -205,12 +227,12 @@ export default function JasaBuatLaguPage() {
 
     setIsSubmitting(true);
     
-    try {
-      // Get next customer service for rotation
-      const currentCS = getNextCustomerService();
-      const csPhone = currentCS?.nohp || '6289524955768'; // Fallback to Ridha's number
-      const csName = currentCS?.nama || 'Customer Service';
-      const csId = currentCS?.id || 1; // Fallback to Ridha's ID
+        try {
+          // Get next customer service for rotation
+          const currentCS = await getNextCustomerService();
+          const csPhone = currentCS?.nohp || '6289524955768'; // Fallback to Ridha's number
+          const csName = currentCS?.nama || 'Customer Service';
+          const csId = currentCS?.id || 1; // Fallback to Ridha's ID
 
       // Try to save to database, but don't block if it fails
       try {
@@ -249,12 +271,12 @@ export default function JasaBuatLaguPage() {
       setShowPopup(false);
       setBusinessName('');
       
-    } catch (error) {
-      console.error('Unexpected error:', error);
-      // Even if there's an unexpected error, still try to redirect to WhatsApp
-      const currentCS = getNextCustomerService();
-      const csPhone = currentCS?.nohp || '6289524955768'; // Fallback to Ridha's number
-      const csName = currentCS?.nama || 'Customer Service';
+        } catch (error) {
+          console.error('Unexpected error:', error);
+          // Even if there's an unexpected error, still try to redirect to WhatsApp
+          const currentCS = await getNextCustomerService();
+          const csPhone = currentCS?.nohp || '6289524955768'; // Fallback to Ridha's number
+          const csName = currentCS?.nama || 'Customer Service';
       
       // Track lead and WhatsApp click for fallback
       trackLead(businessName.trim(), 'jasabuatlagu_page');
