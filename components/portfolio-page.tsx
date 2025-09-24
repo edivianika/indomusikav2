@@ -22,6 +22,7 @@ import {
 import OptimizedImage from './optimized-image'
 import PortfolioPlayer from './portfolio-player'
 import { createClient } from '@/lib/supabase/client'
+import { trackPortfolioPlay, trackButtonClick } from '@/components/facebook-pixel'
 
 // Interface untuk data portfolio dari database
 interface PortfolioItem {
@@ -31,8 +32,8 @@ interface PortfolioItem {
   audio_url: string
   cover_image_url: string
   business_type: string
-  created_at: string
-  updated_at: string
+  created_at?: string
+  updated_at?: string
   client_name?: string
   location?: string
   rating?: number
@@ -154,6 +155,9 @@ export default function PortfolioPage() {
   })
 
   const handlePlayTrack = (track: PortfolioItem, index: number) => {
+    // Track portfolio play event
+    trackPortfolioPlay(track.title, track.business_type)
+    
     setCurrentTrack(track)
     setCurrentIndex(index)
     setPlaylist(filteredData)
@@ -210,6 +214,7 @@ export default function PortfolioPage() {
               </div>
               <a 
                 href="/" 
+                onClick={() => trackButtonClick('Buat Jingle Sekarang', 'Portfolio Page CTA')}
                 className="bg-green-500 hover:bg-green-600 text-white font-semibold px-6 py-3 rounded-full transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2"
               >
                 <span>🎵</span>
@@ -228,7 +233,10 @@ export default function PortfolioPage() {
             {categories.map((category) => (
               <button
                 key={category}
-                onClick={() => setFilters({ category })}
+                onClick={() => {
+                  trackButtonClick(`Category Filter: ${category}`, 'Portfolio Page');
+                  setFilters({ category });
+                }}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                   filters.category === category
                     ? 'bg-green-600 text-white'

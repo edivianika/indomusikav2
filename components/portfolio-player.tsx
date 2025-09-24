@@ -27,7 +27,9 @@ interface Track {
   description: string
   audio_url: string
   cover_image_url: string
-  duration: string
+  duration?: string
+  created_at?: string
+  updated_at?: string
   client_name?: string
   location?: string
   rating?: number

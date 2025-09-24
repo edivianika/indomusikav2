@@ -28,6 +28,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { createClient } from "@/lib/supabase/client"
+import { trackButtonClick, trackPortfolioPlay } from "@/components/facebook-pixel"
 import { submitOrder } from "@/lib/actions"
 import { Component as AnimatedTestimonials } from "@/components/ui/testimonial"
 
@@ -1243,6 +1244,12 @@ const SpotifyLandingPage = () => {
   }, [currentTrackIndex, isMobile, currentSamplesPerPage, isAudioActuallyPlaying])
 
   const playTrack = (trackIndex: number) => {
+    // Track portfolio play event
+    const track = jingleSamples[trackIndex]
+    if (track) {
+      trackPortfolioPlay(track.title, track.business_type || 'Jingle')
+    }
+    
     // Reset all audio states first to ensure clean state
     setIsAudioActuallyPlaying(false)
     setCurrentTrackIndex(trackIndex)
@@ -1347,7 +1354,10 @@ const SpotifyLandingPage = () => {
                 Jasa Buat Lagu
               </a>
               <Button
-                onClick={() => setIsFormOpen(true)}
+                onClick={() => {
+                  trackButtonClick('Pesan Jingle', 'Navigation Header');
+                  setIsFormOpen(true);
+                }}
                 className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 lg:px-4 lg:py-2 rounded-full text-sm lg:text-base"
               >
                 Pesan Jingle
@@ -1454,7 +1464,10 @@ const SpotifyLandingPage = () => {
           >
             <Button
               size="lg"
-              onClick={() => setIsFormOpen(true)}
+              onClick={() => {
+                trackButtonClick('Pesan Sekarang Mulai Rp199K', 'Hero Section CTA');
+                setIsFormOpen(true);
+              }}
               className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 sm:px-10 py-4 sm:py-5 text-lg sm:text-xl font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 w-full sm:w-auto transform hover:scale-105"
             >
               🚀 Pesan Sekarang Mulai Rp199K
@@ -1463,6 +1476,7 @@ const SpotifyLandingPage = () => {
               variant="outline"
               size="lg"
               onClick={() => {
+                trackButtonClick('Random Play', 'Hero Section');
                 if (jingleSamples.length > 0) {
                   const randomIndex = Math.floor(Math.random() * jingleSamples.length)
                   playTrack(randomIndex)
@@ -2325,7 +2339,10 @@ const SpotifyLandingPage = () => {
           >
             <Button
               size="lg"
-              onClick={() => setIsFormOpen(true)}
+              onClick={() => {
+                trackButtonClick('Pesan Jingle Sekarang', 'Hero Section CTA');
+                setIsFormOpen(true);
+              }}
               className="bg-green-500 hover:bg-green-600 text-white px-8 py-4 text-lg font-semibold rounded-full shadow-2xl hover:shadow-green-500/25 transition-all duration-300"
             >
               🎵 Pesan Jingle Sekarang
