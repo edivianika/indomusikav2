@@ -34,7 +34,14 @@ export default function JasaBuatLaguPage() {
   const [businessName, setBusinessName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customerServices, setCustomerServices] = useState<any[]>([]);
-  const [currentCSIndex, setCurrentCSIndex] = useState(0);
+  const [currentCSIndex, setCurrentCSIndex] = useState(() => {
+    // Initialize from sessionStorage or default to 0
+    if (typeof window !== 'undefined') {
+      const savedIndex = sessionStorage.getItem('cs_rotation_index');
+      return savedIndex ? parseInt(savedIndex, 10) : 0;
+    }
+    return 0;
+  });
 
   const [portfolioExamples, setPortfolioExamples] = useState([
     {
@@ -142,6 +149,20 @@ export default function JasaBuatLaguPage() {
     fetchCustomerServices();
   }, []);
 
+  // Sync sessionStorage with state when customerServices change
+  useEffect(() => {
+    if (customerServices.length > 0 && typeof window !== 'undefined') {
+      const savedIndex = sessionStorage.getItem('cs_rotation_index');
+      if (savedIndex) {
+        const parsedIndex = parseInt(savedIndex, 10);
+        // Ensure index is within bounds
+        const validIndex = parsedIndex % customerServices.length;
+        setCurrentCSIndex(validIndex);
+        sessionStorage.setItem('cs_rotation_index', validIndex.toString());
+      }
+    }
+  }, [customerServices]);
+
   // Rotate customer service
   const getNextCustomerService = () => {
     if (customerServices.length === 0) return null;
@@ -153,13 +174,19 @@ export default function JasaBuatLaguPage() {
     const nextIndex = (currentCSIndex + 1) % customerServices.length;
     setCurrentCSIndex(nextIndex);
     
+    // Save to sessionStorage for persistence across page loads
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('cs_rotation_index', nextIndex.toString());
+    }
+    
     // Debug logging
     console.log('CS Rotation Debug:', {
       currentIndex: currentCSIndex,
       nextIndex: nextIndex,
       currentCS: currentCS,
       totalCS: customerServices.length,
-      allCS: customerServices.map(cs => ({ id: cs.id, nama: cs.nama }))
+      allCS: customerServices.map(cs => ({ id: cs.id, nama: cs.nama })),
+      sessionStorage: typeof window !== 'undefined' ? sessionStorage.getItem('cs_rotation_index') : 'N/A'
     });
     
     return currentCS;
