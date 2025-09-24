@@ -106,24 +106,29 @@ export default function JasaBuatLaguPage() {
     setIsSubmitting(true);
     
     try {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('business_inquiries')
-        .insert([
-          {
-            business_name: businessName.trim(),
-            created_at: new Date().toISOString(),
-            status: 'new'
-          }
-        ]);
+      // Try to save to database, but don't block if it fails
+      try {
+        const supabase = createClient();
+        const { error } = await supabase
+          .from('business_inquiries')
+          .insert([
+            {
+              business_name: businessName.trim(),
+              created_at: new Date().toISOString(),
+              status: 'new'
+            }
+          ]);
 
-      if (error) {
-        console.error('Error saving business name:', error);
-        alert('Terjadi kesalahan. Silakan coba lagi.');
-        return;
+        if (error) {
+          console.warn('Database save failed, but continuing with WhatsApp redirect:', error);
+          // Continue with WhatsApp redirect even if database save fails
+        }
+      } catch (dbError) {
+        console.warn('Database connection failed, but continuing with WhatsApp redirect:', dbError);
+        // Continue with WhatsApp redirect even if database fails
       }
 
-      // Redirect to WhatsApp with business name
+      // Always redirect to WhatsApp regardless of database status
       const message = encodeURIComponent(
         `Halo! Saya ${businessName.trim()}, tertarik dengan jasa buat lagu UMKM. Bisa info lebih detail tentang paket 2 lagu original dengan harga Rp199K?`
       );
@@ -134,8 +139,15 @@ export default function JasaBuatLaguPage() {
       setBusinessName('');
       
     } catch (error) {
-      console.error('Error:', error);
-      alert('Terjadi kesalahan. Silakan coba lagi.');
+      console.error('Unexpected error:', error);
+      // Even if there's an unexpected error, still try to redirect to WhatsApp
+      const message = encodeURIComponent(
+        `Halo! Saya ${businessName.trim()}, tertarik dengan jasa buat lagu UMKM. Bisa info lebih detail tentang paket 2 lagu original dengan harga Rp199K?`
+      );
+      window.open(`https://wa.me/6281234567890?text=${message}`, '_blank');
+      
+      setShowPopup(false);
+      setBusinessName('');
     } finally {
       setIsSubmitting(false);
     }
