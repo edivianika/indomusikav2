@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 import PWAProvider from "@/components/pwa-provider"
+import FacebookPixel from "@/components/facebook-pixel"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -220,6 +221,7 @@ html {
         <PWAProvider>
           {children}
         </PWAProvider>
+        <FacebookPixel pixelId={process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID || 'YOUR_PIXEL_ID'} />
       </body>
     </html>
   )

@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
+import { trackLead, trackWhatsAppClick, trackPortfolioPlay, trackPricingView, trackButtonClick } from '@/components/facebook-pixel';
 import { 
   Music, 
   CheckCircle, 
@@ -18,7 +19,7 @@ import {
   TrendingUp,
   Heart,
   Sparkles,
-  SkipBack,
+  SkipBack, 
   SkipForward
 } from 'lucide-react';
 
@@ -151,6 +152,7 @@ export default function JasaBuatLaguPage() {
   };
 
   const handleWhatsAppClick = () => {
+    trackButtonClick('WhatsApp CTA', 'Hero Section');
     setShowPopup(true);
   };
 
@@ -192,6 +194,10 @@ export default function JasaBuatLaguPage() {
         // Continue with WhatsApp redirect even if database fails
       }
 
+      // Track lead and WhatsApp click
+      trackLead(businessName.trim(), 'jasabuatlagu_page');
+      trackWhatsAppClick(businessName.trim(), csName);
+      
       // Always redirect to WhatsApp regardless of database status
       const message = encodeURIComponent(
         `Halo ${csName}! Saya ${businessName.trim()}, tertarik dengan jasa buat lagu UMKM. Bisa info lebih detail tentang paket 2 lagu original dengan harga Rp199K?`
@@ -209,6 +215,10 @@ export default function JasaBuatLaguPage() {
       const csPhone = currentCS?.nohp || '6289524955768'; // Fallback to Ridha's number
       const csName = currentCS?.nama || 'Customer Service';
       
+      // Track lead and WhatsApp click for fallback
+      trackLead(businessName.trim(), 'jasabuatlagu_page');
+      trackWhatsAppClick(businessName.trim(), csName);
+      
       const message = encodeURIComponent(
         `Halo ${csName}! Saya ${businessName.trim()}, tertarik dengan jasa buat lagu UMKM. Bisa info lebih detail tentang paket 2 lagu original dengan harga Rp199K?`
       );
@@ -224,6 +234,9 @@ export default function JasaBuatLaguPage() {
   const handlePlayExample = (id: number) => {
     const track = portfolioExamples.find(t => t.id === id);
     if (track) {
+      // Track portfolio play
+      trackPortfolioPlay(track.title, track.genre);
+      
       // If it's the same track and currently playing, pause it
       if (currentTrack?.id === id && isPlayerPlaying) {
         if (audioRef.current) {
@@ -748,7 +761,7 @@ export default function JasaBuatLaguPage() {
       </section>
 
       {/* Pricing Section */}
-      <section className="py-8 sm:py-12 bg-green-50">
+      <section className="py-8 sm:py-12 bg-green-50" onMouseEnter={() => trackPricingView()}>
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -821,7 +834,10 @@ export default function JasaBuatLaguPage() {
               </div>
 
               <button
-                onClick={handleWhatsAppClick}
+                onClick={() => {
+                  trackButtonClick('Pesan Sekarang - Cuma Rp199K', 'Pricing Section');
+                  handleWhatsAppClick();
+                }}
                 className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 sm:px-6 rounded-full text-sm sm:text-base transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg flex items-center space-x-2 mx-auto whitespace-nowrap"
               >
                 <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
@@ -853,7 +869,10 @@ export default function JasaBuatLaguPage() {
             </p>
             
                 <button
-                  onClick={handleWhatsAppClick}
+                  onClick={() => {
+                    trackButtonClick('Chat WhatsApp Sekarang', 'Bottom CTA Section');
+                    handleWhatsAppClick();
+                  }}
                   className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 sm:px-6 rounded-full text-sm sm:text-base transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg flex items-center space-x-2 mx-auto whitespace-nowrap"
                 >
                   <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
