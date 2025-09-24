@@ -209,49 +209,22 @@ export default function JasaBuatLaguPage() {
       try {
         const supabase = createClient();
         
-        // Use RPC function for random selection or fallback to random sorting
+        // First, get all records and shuffle on client side
         const { data, error } = await supabase
           .from('jingle_samples')
           .select('*')
-          .order('random()') // PostgreSQL random() function
-          .limit(5);
+          .limit(20); // Get more records for better randomization
 
         if (error) {
           console.error('Error fetching portfolio examples:', error);
-          // Fallback: try without random ordering
-          const { data: fallbackData, error: fallbackError } = await supabase
-            .from('jingle_samples')
-            .select('*')
-            .limit(10); // Get more records for client-side shuffling
-
-          if (fallbackError) {
-            console.error('Fallback error:', fallbackError);
-            return;
-          }
-
-          if (fallbackData && fallbackData.length > 0) {
-            // Shuffle on client side
-            const shuffledData = fallbackData.sort(() => Math.random() - 0.5).slice(0, 5);
-            
-            const formattedData = shuffledData.map((item, index) => ({
-              id: item.id,
-              title: item.title || `Jingle ${item.business_type || 'UMKM'}`,
-              description: item.description || `Jingle untuk ${item.business_type || 'UMKM'}`,
-              genre: item.business_type || 'Pop',
-              duration: item.duration || '30s',
-              audio_url: item.audio_url || null
-            }));
-            
-            setPortfolioExamples(formattedData);
-            if (formattedData.length > 0) {
-              setCurrentTrack(formattedData[0]);
-            }
-          }
           return;
         }
 
         if (data && data.length > 0) {
-          const formattedData = data.map((item, index) => ({
+          // Shuffle the data on client side
+          const shuffledData = [...data].sort(() => Math.random() - 0.5).slice(0, 5);
+          
+          const formattedData = shuffledData.map((item, index) => ({
             id: item.id,
             title: item.title || `Jingle ${item.business_type || 'UMKM'}`,
             description: item.description || `Jingle untuk ${item.business_type || 'UMKM'}`,
@@ -265,9 +238,74 @@ export default function JasaBuatLaguPage() {
           if (formattedData.length > 0) {
             setCurrentTrack(formattedData[0]);
           }
+        } else {
+          // Fallback data if database is empty
+          const fallbackData = [
+            {
+              id: 1,
+              title: "Jingle Laundry Express Ponorogo",
+              description: "Biar cucian numpuk, tetap wangi kayak baru!",
+              genre: "Pop Catchy",
+              duration: "30s",
+              audio_url: "/audio/jingle-sample-1.mp3"
+            },
+            {
+              id: 2,
+              title: "Jingle Coffee Shop 'Kopi Kita'",
+              description: "Nuansa akustik santai, pas buat ambience kedai",
+              genre: "Akustik",
+              duration: "25s",
+              audio_url: "/audio/jingle-sample-2.mp3"
+            },
+            {
+              id: 3,
+              title: "Jingle Barbershop",
+              description: "Beat energik ala TikTok, bikin anak muda langsung relate",
+              genre: "EDM",
+              duration: "35s",
+              audio_url: "/audio/jingle-sample-3.mp3"
+            }
+          ];
+          
+          setPortfolioExamples(fallbackData);
+          if (fallbackData.length > 0) {
+            setCurrentTrack(fallbackData[0]);
+          }
         }
       } catch (error) {
         console.error('Error fetching portfolio examples:', error);
+        // Use fallback data on error
+        const fallbackData = [
+          {
+            id: 1,
+            title: "Jingle Laundry Express Ponorogo",
+            description: "Biar cucian numpuk, tetap wangi kayak baru!",
+            genre: "Pop Catchy",
+            duration: "30s",
+            audio_url: "/audio/jingle-sample-1.mp3"
+          },
+          {
+            id: 2,
+            title: "Jingle Coffee Shop 'Kopi Kita'",
+            description: "Nuansa akustik santai, pas buat ambience kedai",
+            genre: "Akustik",
+            duration: "25s",
+            audio_url: "/audio/jingle-sample-2.mp3"
+          },
+          {
+            id: 3,
+            title: "Jingle Barbershop",
+            description: "Beat energik ala TikTok, bikin anak muda langsung relate",
+            genre: "EDM",
+            duration: "35s",
+            audio_url: "/audio/jingle-sample-3.mp3"
+          }
+        ];
+        
+        setPortfolioExamples(fallbackData);
+        if (fallbackData.length > 0) {
+          setCurrentTrack(fallbackData[0]);
+        }
       }
     };
 
