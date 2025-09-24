@@ -1340,6 +1340,12 @@ const SpotifyLandingPage = () => {
               >
                 Portfolio
               </a>
+              <a 
+                href="/jasabuatlagu" 
+                className="text-gray-300 hover:text-white transition-colors text-sm lg:text-base"
+              >
+                Jasa Buat Lagu
+              </a>
               <Button
                 onClick={() => setIsFormOpen(true)}
                 className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 lg:px-4 lg:py-2 rounded-full text-sm lg:text-base"
@@ -1355,6 +1361,12 @@ const SpotifyLandingPage = () => {
                 className="text-gray-300 hover:text-white transition-colors text-sm px-2 py-1"
               >
                 Portfolio
+              </a>
+              <a 
+                href="/jasabuatlagu" 
+                className="text-gray-300 hover:text-white transition-colors text-sm px-2 py-1"
+              >
+                Jasa Buat Lagu
               </a>
               <Button
                 onClick={() => setIsFormOpen(true)}
