@@ -643,36 +643,81 @@ export default function JasaBuatLaguPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">
-              💰 Harga Spesial untuk UMKM:
-            </h2>
+            <div className="flex items-center justify-center space-x-3 mb-4">
+              <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">
+                <span className="text-white font-bold text-lg">$</span>
+              </div>
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
+                Harga Spesial untuk UMKM:
+              </h2>
+            </div>
+            <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8">
+              Promo terbatas untuk 50 UMKM pertama!
+            </p>
             
-            <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200 shadow-md">
-              <div className="mb-4 sm:mb-6">
-                <div className="flex items-center justify-center space-x-3 sm:space-x-4 mb-3 sm:mb-4">
-                  <span className="text-lg sm:text-xl text-gray-500 line-through">Rp497.000</span>
-                  <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-green-600">Rp199.000</span>
+            <div className="bg-white rounded-xl p-6 sm:p-8 border border-gray-200 shadow-lg">
+              <div className="mb-6 sm:mb-8">
+                <div className="flex items-center justify-center space-x-4 mb-4">
+                  <span className="text-3xl sm:text-4xl md:text-5xl font-bold text-green-600">Rp199.000</span>
+                  <div className="bg-yellow-400 text-black px-3 py-1 rounded-full text-sm font-bold">
+                    Diskon 60%
+                  </div>
                 </div>
-                <p className="text-sm sm:text-base text-gray-700">Sekarang cukup Rp199.000 aja!</p>
+                <p className="text-lg sm:text-xl text-gray-500 line-through">Rp 497.000</p>
               </div>
 
-              <div className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
-                <div className="flex items-center justify-center space-x-2 sm:space-x-3">
-                  <Music className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
-                  <span className="text-sm sm:text-base font-semibold">2 Lagu Original</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <Music className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-semibold text-gray-900">2 Lagu Original</p>
+                    <p className="text-sm text-gray-600">custom sesuai brand</p>
+                  </div>
                 </div>
-                <div className="flex items-center justify-center space-x-2 sm:space-x-3">
-                  <Gift className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
-                  <span className="text-sm sm:text-base font-semibold">Free Lirik</span>
+                
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <span className="text-green-600 text-lg">✍️</span>
+                  </div>
+                  <div className="text-left">
+                    <p className="font-semibold text-gray-900">Free Lirik</p>
+                    <p className="text-sm text-gray-600">gampang viral</p>
+                  </div>
                 </div>
-                <div className="flex items-center justify-center space-x-2 sm:space-x-3">
-                  <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
-                  <span className="text-sm sm:text-base font-semibold">Free Revisi</span>
+                
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <span className="text-green-600 text-lg">⟳</span>
+                  </div>
+                  <div className="text-left">
+                    <p className="font-semibold text-gray-900">Free Revisi</p>
+                    <p className="text-sm text-gray-600">sampai puas</p>
+                  </div>
                 </div>
-                <div className="flex items-center justify-center space-x-2 sm:space-x-3">
-                  <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
-                  <span className="text-sm sm:text-base font-semibold">Bayar Setelah Jadi (100% aman)</span>
+                
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <span className="text-green-600 text-lg">✅</span>
+                  </div>
+                  <div className="text-left">
+                    <p className="font-semibold text-gray-900">Bayar Setelah Jadi</p>
+                    <p className="text-sm text-gray-600">100% aman</p>
+                  </div>
                 </div>
+              </div>
+
+              <button
+                onClick={handleWhatsAppClick}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-xl text-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl mb-4"
+              >
+                Pesan Sekarang - Cuma Rp199K
+              </button>
+              
+              <div className="flex items-center justify-center space-x-2 text-sm text-gray-600">
+                <span className="text-green-600">✅</span>
+                <span>Bayar setelah jadi • Free revisi • Hak pakai seral</span>
               </div>
             </div>
           </motion.div>
