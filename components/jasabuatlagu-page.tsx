@@ -95,14 +95,20 @@ export default function JasaBuatLaguPage() {
   };
 
   const handlePlayExample = (id: number) => {
-    setIsPlaying(isPlaying === id ? null : id);
-    // Set as current track in player
     const track = portfolioExamples.find(t => t.id === id);
     if (track) {
+      // Set as current track in player
       setCurrentTrack(track);
       setIsPlayerPlaying(true);
+      setIsPlaying(id);
+      
+      // Play audio immediately
       if (audioRef.current) {
-        audioRef.current.play();
+        audioRef.current.src = track.audio_url;
+        audioRef.current.load();
+        audioRef.current.play().catch(error => {
+          console.error('Error playing audio:', error);
+        });
       }
     }
   };
@@ -144,7 +150,16 @@ export default function JasaBuatLaguPage() {
     if (portfolioExamples.length > 0) {
       const currentIndex = portfolioExamples.findIndex(track => track.id === currentTrack?.id);
       const prevIndex = currentIndex > 0 ? currentIndex - 1 : portfolioExamples.length - 1;
-      setCurrentTrack(portfolioExamples[prevIndex]);
+      const prevTrack = portfolioExamples[prevIndex];
+      setCurrentTrack(prevTrack);
+      setIsPlaying(prevTrack.id);
+      setIsPlayerPlaying(true);
+      
+      if (audioRef.current) {
+        audioRef.current.play().catch(error => {
+          console.error('Error playing audio:', error);
+        });
+      }
     }
   };
 
@@ -152,7 +167,16 @@ export default function JasaBuatLaguPage() {
     if (portfolioExamples.length > 0) {
       const currentIndex = portfolioExamples.findIndex(track => track.id === currentTrack?.id);
       const nextIndex = currentIndex < portfolioExamples.length - 1 ? currentIndex + 1 : 0;
-      setCurrentTrack(portfolioExamples[nextIndex]);
+      const nextTrack = portfolioExamples[nextIndex];
+      setCurrentTrack(nextTrack);
+      setIsPlaying(nextTrack.id);
+      setIsPlayerPlaying(true);
+      
+      if (audioRef.current) {
+        audioRef.current.play().catch(error => {
+          console.error('Error playing audio:', error);
+        });
+      }
     }
   };
 
@@ -200,6 +224,14 @@ export default function JasaBuatLaguPage() {
 
     fetchPortfolioExamples();
   }, []);
+
+  // Update audio source when currentTrack changes
+  useEffect(() => {
+    if (audioRef.current && currentTrack?.audio_url) {
+      audioRef.current.src = currentTrack.audio_url;
+      audioRef.current.load();
+    }
+  }, [currentTrack]);
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
@@ -382,13 +414,15 @@ export default function JasaBuatLaguPage() {
           >
             <audio
               ref={audioRef}
-              src={currentTrack?.audio_url}
               onTimeUpdate={handleTimeUpdate}
               onLoadedMetadata={handleLoadedMetadata}
               onEnded={() => {
                 setIsPlayerPlaying(false);
+                setIsPlaying(null);
                 handleNext();
               }}
+              onPlay={() => setIsPlayerPlaying(true)}
+              onPause={() => setIsPlayerPlaying(false)}
               className="hidden"
             />
             <div className="flex items-center space-x-4">
