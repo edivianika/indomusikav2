@@ -142,7 +142,7 @@ export default function JasaBuatLaguPage() {
     fetchCustomerServices();
   }, []);
 
-  // Initialize current CS index from database with fallback
+  // Initialize current CS index from database
   useEffect(() => {
     const initializeCSIndex = async () => {
       if (customerServices.length > 0) {
@@ -150,8 +150,8 @@ export default function JasaBuatLaguPage() {
           const supabase = createClient();
           const { data, error } = await supabase.rpc('get_current_cs_index');
           
-          if (error || data === null || data === undefined) {
-            console.warn('Database function not available, using default index 0:', error);
+          if (error) {
+            console.error('Error getting current CS index:', error);
             setCurrentCSIndex(0);
             return;
           }
@@ -159,9 +159,9 @@ export default function JasaBuatLaguPage() {
           const index = data || 0;
           setCurrentCSIndex(index);
           
-          console.log('CS Index initialized from database:', index);
+          console.log('✅ CS Index initialized from database:', index);
         } catch (error) {
-          console.warn('Error initializing CS index, using default:', error);
+          console.error('Error initializing CS index:', error);
           setCurrentCSIndex(0);
         }
       }
@@ -170,60 +170,53 @@ export default function JasaBuatLaguPage() {
     initializeCSIndex();
   }, [customerServices]);
 
-  // Rotate customer service using database with robust fallback
+  // Rotate customer service using database
   const getNextCustomerService = async () => {
     if (customerServices.length === 0) return null;
     
     try {
       const supabase = createClient();
       
-      // Try to get next CS index from database
-      const { data: nextIndex, error } = await supabase.rpc('get_next_cs_index');
+      // Get next CS index atomically from database
+      const { data: csIndex, error } = await supabase.rpc('get_next_cs_index');
       
-      if (error || nextIndex === null || nextIndex === undefined) {
-        console.warn('Database function not available, using local rotation:', error);
-        // Fallback to local rotation
+      if (error) {
+        console.error('Database error, using fallback rotation:', error);
+        // Fallback to simple rotation
         const fallbackIndex = (currentCSIndex + 1) % customerServices.length;
         setCurrentCSIndex(fallbackIndex);
-        
-        console.log('CS Rotation Debug (Local Fallback):', {
-          fallbackIndex: fallbackIndex,
-          currentCS: customerServices[fallbackIndex],
-          totalCS: customerServices.length,
-          method: 'local_fallback'
-        });
-        
         return customerServices[fallbackIndex];
       }
       
-      // Update local state
-      setCurrentCSIndex(nextIndex);
+      // Ensure index is within bounds
+      const safeIndex = csIndex % customerServices.length;
+      setCurrentCSIndex(safeIndex);
       
       // Get the CS for this index
-      const currentCS = customerServices[nextIndex];
+      const selectedCS = customerServices[safeIndex];
       
       // Debug logging
-      console.log('CS Rotation Debug (Database):', {
-        databaseIndex: nextIndex,
-        currentCS: currentCS,
+      console.log('🔄 CS Rotation (Database):', {
+        databaseIndex: csIndex,
+        safeIndex: safeIndex,
+        selectedCS: selectedCS?.nama,
+        phone: selectedCS?.nohp,
         totalCS: customerServices.length,
-        allCS: customerServices.map(cs => ({ id: cs.id, nama: cs.nama })),
         method: 'database_atomic'
       });
       
-      return currentCS;
+      return selectedCS;
       
     } catch (error) {
-      console.warn('Error in CS rotation, using local fallback:', error);
-      // Fallback to local rotation
+      console.error('Error in CS rotation:', error);
+      // Fallback to simple rotation
       const fallbackIndex = (currentCSIndex + 1) % customerServices.length;
       setCurrentCSIndex(fallbackIndex);
       
-      console.log('CS Rotation Debug (Error Fallback):', {
+      console.log('🔄 CS Rotation (Fallback):', {
         fallbackIndex: fallbackIndex,
-        currentCS: customerServices[fallbackIndex],
-        totalCS: customerServices.length,
-        method: 'error_fallback'
+        selectedCS: customerServices[fallbackIndex]?.nama,
+        method: 'local_fallback'
       });
       
       return customerServices[fallbackIndex];
