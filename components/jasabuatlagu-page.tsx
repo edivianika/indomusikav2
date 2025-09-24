@@ -36,21 +36,24 @@ export default function JasaBuatLaguPage() {
       title: "Jingle Laundry Express Ponorogo",
       description: "Biar cucian numpuk, tetap wangi kayak baru!",
       genre: "Pop Catchy",
-      duration: "30s"
+      duration: "30s",
+      audio_url: "/audio/jingle-sample-1.mp3"
     },
     {
       id: 2,
       title: "Jingle Coffee Shop 'Kopi Kita'",
       description: "Nuansa akustik santai, pas buat ambience kedai",
       genre: "Akustik",
-      duration: "25s"
+      duration: "25s",
+      audio_url: "/audio/jingle-sample-2.mp3"
     },
     {
       id: 3,
       title: "Jingle Barbershop",
       description: "Beat energik ala TikTok, bikin anak muda langsung relate",
       genre: "EDM",
-      duration: "35s"
+      duration: "35s",
+      audio_url: "/audio/jingle-sample-3.mp3"
     }
   ]);
 
@@ -443,10 +446,10 @@ export default function JasaBuatLaguPage() {
             <div className="mb-6 sm:mb-8">
                 <button
                   onClick={handleWhatsAppClick}
-                  className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-full text-base transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg flex items-center space-x-2 mx-auto"
+                  className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 sm:px-6 rounded-full text-sm sm:text-base transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg flex items-center space-x-2 mx-auto whitespace-nowrap"
                 >
-                  <MessageCircle className="w-5 h-5" />
-                  <span>Bikin Lagu untuk Usaha Saya Sekarang</span>
+                  <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                  <span className="truncate">Pesan Jingle Saya Sekarang 🚀</span>
                 </button>
             </div>
           </motion.div>
@@ -697,15 +700,14 @@ export default function JasaBuatLaguPage() {
 
               <button
                 onClick={handleWhatsAppClick}
-                className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-full text-base transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg flex items-center space-x-2 mx-auto"
+                className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 sm:px-6 rounded-full text-sm sm:text-base transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg flex items-center space-x-2 mx-auto whitespace-nowrap"
               >
-                <MessageCircle className="w-5 h-5" />
-                <span>Pesan Sekarang - Cuma Rp199K</span>
+                <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                <span className="truncate">Pesan Sekarang - Cuma Rp199K</span>
               </button>
               
-              <div className="flex items-center justify-center space-x-2 text-sm text-gray-600">
-                <span className="text-green-600">✅</span>
-                <span>Bayar setelah jadi • Free revisi • Hak pakai seral</span>
+              <div className="text-center text-xs text-gray-500">
+                Bayar setelah jadi • Free revisi • Hak pakai seral
               </div>
             </div>
           </motion.div>
@@ -730,10 +732,10 @@ export default function JasaBuatLaguPage() {
             
                 <button
                   onClick={handleWhatsAppClick}
-                  className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-full text-base transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg flex items-center space-x-2 mx-auto"
+                  className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 sm:px-6 rounded-full text-sm sm:text-base transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg flex items-center space-x-2 mx-auto whitespace-nowrap"
                 >
-                  <MessageCircle className="w-5 h-5" />
-                  <span>Chat WhatsApp Sekarang</span>
+                  <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                  <span className="truncate">Chat WhatsApp Sekarang</span>
                 </button>
             
             <p className="text-xs sm:text-sm text-gray-400 mt-3 sm:mt-4">
