@@ -420,7 +420,7 @@ export default function JasaBuatLaguPage() {
                   <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 sm:mb-5 text-center">
                     Indomusika siap bantu bikin jingle original agar usaha kamu:
                   </h3>
-                  <div className="space-y-3 sm:space-y-4 max-w-md mx-auto">
+                  <div className="space-y-3 sm:space-y-4 max-w-sm mx-auto ml-4">
                     <div className="flex items-center space-x-3">
                       <div className="w-6 h-6 bg-gray-900 rounded-full flex items-center justify-center flex-shrink-0">
                         <span className="text-white text-xs">🎧</span>
