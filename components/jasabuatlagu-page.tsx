@@ -97,6 +97,16 @@ export default function JasaBuatLaguPage() {
   const handlePlayExample = (id: number) => {
     const track = portfolioExamples.find(t => t.id === id);
     if (track) {
+      // If it's the same track and currently playing, pause it
+      if (currentTrack?.id === id && isPlayerPlaying) {
+        if (audioRef.current) {
+          audioRef.current.pause();
+        }
+        setIsPlayerPlaying(false);
+        setIsPlaying(null);
+        return;
+      }
+      
       // Set as current track in player
       setCurrentTrack(track);
       setIsPlaying(id);
@@ -104,17 +114,12 @@ export default function JasaBuatLaguPage() {
       
       // Play audio immediately
       if (audioRef.current) {
-        // If it's the same track, just toggle play/pause
-        if (currentTrack?.id === id && isPlayerPlaying) {
-          audioRef.current.pause();
-          setIsPlayerPlaying(false);
-          setIsPlaying(null);
-        } else {
-          // Play the track
-          audioRef.current.play().catch(error => {
-            console.error('Error playing audio:', error);
-          });
-        }
+        // Set the source and play immediately
+        audioRef.current.src = track.audio_url;
+        audioRef.current.load();
+        audioRef.current.play().catch(error => {
+          console.error('Error playing audio:', error);
+        });
       }
     }
   };
@@ -162,6 +167,9 @@ export default function JasaBuatLaguPage() {
       setIsPlayerPlaying(true);
       
       if (audioRef.current) {
+        // Set the source and play immediately
+        audioRef.current.src = prevTrack.audio_url;
+        audioRef.current.load();
         audioRef.current.play().catch(error => {
           console.error('Error playing audio:', error);
         });
@@ -179,6 +187,9 @@ export default function JasaBuatLaguPage() {
       setIsPlayerPlaying(true);
       
       if (audioRef.current) {
+        // Set the source and play immediately
+        audioRef.current.src = nextTrack.audio_url;
+        audioRef.current.load();
         audioRef.current.play().catch(error => {
           console.error('Error playing audio:', error);
         });
@@ -197,14 +208,45 @@ export default function JasaBuatLaguPage() {
     const fetchPortfolioExamples = async () => {
       try {
         const supabase = createClient();
+        
+        // Use RPC function for random selection or fallback to random sorting
         const { data, error } = await supabase
           .from('jingle_samples')
           .select('*')
-          .order('created_at', { ascending: false })
+          .order('random()') // PostgreSQL random() function
           .limit(5);
 
         if (error) {
           console.error('Error fetching portfolio examples:', error);
+          // Fallback: try without random ordering
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('jingle_samples')
+            .select('*')
+            .limit(10); // Get more records for client-side shuffling
+
+          if (fallbackError) {
+            console.error('Fallback error:', fallbackError);
+            return;
+          }
+
+          if (fallbackData && fallbackData.length > 0) {
+            // Shuffle on client side
+            const shuffledData = fallbackData.sort(() => Math.random() - 0.5).slice(0, 5);
+            
+            const formattedData = shuffledData.map((item, index) => ({
+              id: item.id,
+              title: item.title || `Jingle ${item.business_type || 'UMKM'}`,
+              description: item.description || `Jingle untuk ${item.business_type || 'UMKM'}`,
+              genre: item.business_type || 'Pop',
+              duration: item.duration || '30s',
+              audio_url: item.audio_url || null
+            }));
+            
+            setPortfolioExamples(formattedData);
+            if (formattedData.length > 0) {
+              setCurrentTrack(formattedData[0]);
+            }
+          }
           return;
         }
 
@@ -217,6 +259,7 @@ export default function JasaBuatLaguPage() {
             duration: item.duration || '30s',
             audio_url: item.audio_url || null
           }));
+          
           setPortfolioExamples(formattedData);
           // Set first track as current track
           if (formattedData.length > 0) {
@@ -231,20 +274,23 @@ export default function JasaBuatLaguPage() {
     fetchPortfolioExamples();
   }, []);
 
-  // Update audio source when currentTrack changes
+  // Update audio source when currentTrack changes (only for external changes)
   useEffect(() => {
     if (audioRef.current && currentTrack?.audio_url) {
-      // Pause current audio first
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      
-      // Set new source
-      audioRef.current.src = currentTrack.audio_url;
-      audioRef.current.load();
-      
-      // Reset time tracking
-      setCurrentTime(0);
-      setDuration(0);
+      // Only update if the source is different
+      if (audioRef.current.src !== currentTrack.audio_url) {
+        // Pause current audio first
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        
+        // Set new source
+        audioRef.current.src = currentTrack.audio_url;
+        audioRef.current.load();
+        
+        // Reset time tracking
+        setCurrentTime(0);
+        setDuration(0);
+      }
     }
   }, [currentTrack]);
 
@@ -533,8 +579,6 @@ export default function JasaBuatLaguPage() {
                       <p className="text-sm text-gray-600 mb-2">{example.description}</p>
                       <div className="flex items-center space-x-2">
                         <span className="text-sm text-gray-500">{example.genre}</span>
-                        <span className="text-sm text-gray-500">•</span>
-                        <span className="text-sm text-gray-500">{example.duration}</span>
                       </div>
                     </div>
                   </div>
