@@ -146,8 +146,22 @@ export default function JasaBuatLaguPage() {
   const getNextCustomerService = () => {
     if (customerServices.length === 0) return null;
     
+    // Get the current CS first
     const currentCS = customerServices[currentCSIndex];
-    setCurrentCSIndex((prevIndex) => (prevIndex + 1) % customerServices.length);
+    
+    // Update the index for next time (but don't wait for state update)
+    const nextIndex = (currentCSIndex + 1) % customerServices.length;
+    setCurrentCSIndex(nextIndex);
+    
+    // Debug logging
+    console.log('CS Rotation Debug:', {
+      currentIndex: currentCSIndex,
+      nextIndex: nextIndex,
+      currentCS: currentCS,
+      totalCS: customerServices.length,
+      allCS: customerServices.map(cs => ({ id: cs.id, nama: cs.nama }))
+    });
+    
     return currentCS;
   };
 
