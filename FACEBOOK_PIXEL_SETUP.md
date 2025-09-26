@@ -18,6 +18,12 @@ Buat file `.env.local` di root project:
 # Facebook Pixel Configuration
 NEXT_PUBLIC_FACEBOOK_PIXEL_ID=1234567890123456
 
+# Facebook Conversion API Configuration
+FACEBOOK_ACCESS_TOKEN=EAAIJbU65rIYBPtxQhAc8QYm0XQymOZARegt6nsveZAjDaMLfZBZBKBv1ZBWY7jCDWZAHmTwxcYZCGsuc1FZA2UfX1ZCZCg0lSTVZA2ypsZAg3Ihq9i11M2xcJDNZC3oP33xow3VmtB0ZCayANHURKQuYIE3z6nBFshLFIK71p5YryFUUhgFWxYv1na1FqtiU0xxnkz7CqYfgZDZD
+
+# Optional: Test Event Code untuk testing
+FACEBOOK_TEST_EVENT_CODE=TEST12345
+
 # Supabase Configuration (jika belum ada)
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
@@ -28,7 +34,13 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 2. Buka website dan cek apakah pixel terdeteksi
 3. Test events di Facebook Events Manager
 
-## 📈 Tracking Events
+## 🔄 Dual Tracking Implementation
+
+### Client-Side + Server-Side Tracking
+Aplikasi sekarang menggunakan **dual tracking** untuk akurasi maksimal:
+
+1. **Client-Side (Facebook Pixel)** - Real-time tracking di browser
+2. **Server-Side (Conversion API)** - Reliable tracking dari server
 
 ### ✅ Implemented Events
 
@@ -38,39 +50,70 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 fbq('track', 'PageView');
 ```
 
-**2. Lead Generation**
+**2. Lead Generation (Dual Tracking)**
 ```javascript
-// Track saat user submit business name
+// Client-side tracking
 trackLead(businessName, 'jasabuatlagu_page');
+
+// Server-side tracking (automatic)
+import { trackLeadServer } from '@/lib/facebook-server-actions';
+await trackLeadServer(businessName, 'jasabuatlagu_page', userEmail, userPhone);
 // Parameters: content_name, content_category, value, currency, source
 ```
 
-**3. WhatsApp Contact**
+**3. WhatsApp Contact (Dual Tracking)**
 ```javascript
-// Track saat user klik WhatsApp
+// Client-side tracking
 trackWhatsAppClick(businessName, csName);
+
+// Server-side tracking (automatic)
+import { trackWhatsAppContactServer } from '@/lib/facebook-server-actions';
+await trackWhatsAppContactServer(businessName, csName, userEmail, userPhone);
 // Parameters: content_name, content_category, value, currency, cs_name
 ```
 
-**4. Portfolio Play**
+**4. Portfolio Play (Dual Tracking)**
 ```javascript
-// Track saat user play audio portfolio
+// Client-side tracking
 trackPortfolioPlay(songTitle, genre);
+
+// Server-side tracking (automatic)
+import { trackPortfolioPlayServer } from '@/lib/facebook-server-actions';
+await trackPortfolioPlayServer(songTitle, genre, userEmail);
 // Parameters: content_name, content_category, content_type, genre
 ```
 
-**5. Pricing View**
+**5. Pricing View (Dual Tracking)**
 ```javascript
-// Track saat user hover pricing section
+// Client-side tracking
 trackPricingView();
+
+// Server-side tracking (automatic)
+import { trackPricingViewServer } from '@/lib/facebook-server-actions';
+await trackPricingViewServer(userEmail);
 // Parameters: content_name, content_category, value, currency
 ```
 
-**6. Button Clicks**
+**6. Button Clicks (Dual Tracking)**
 ```javascript
-// Track semua button clicks
+// Client-side tracking
 trackButtonClick(buttonName, location);
+
+// Server-side tracking (automatic)
+import { trackButtonClickServer } from '@/lib/facebook-server-actions';
+await trackButtonClickServer(buttonName, location, userEmail);
 // Parameters: button_name, location, timestamp
+```
+
+**7. Add to Cart (Dual Tracking)**
+```javascript
+// Client-side tracking
+trackAddToCart(businessName, packageName, packageValue, currency);
+
+// Server-side tracking (automatic)
+import { trackAddToCartServer } from '@/lib/facebook-server-actions';
+await trackAddToCartServer(businessName, packageName, packageValue, currency, userEmail, userPhone);
+// Parameters: content_name, content_category, content_type, value, currency, business_name, num_items
 ```
 
 ### 🎯 Event Parameters
@@ -107,6 +150,19 @@ trackButtonClick(buttonName, location);
 }
 ```
 
+**Add to Cart Event:**
+```javascript
+{
+  content_name: "Paket Jingle UMKM",
+  content_category: "Jingle Package",
+  content_type: "service",
+  value: 199000,
+  currency: "IDR",
+  business_name: "Warung Makan Sederhana",
+  num_items: 1
+}
+```
+
 ## 📊 Analytics Dashboard
 
 ### Facebook Events Manager
@@ -121,6 +177,7 @@ trackButtonClick(buttonName, location);
 - **Portfolio Engagement:** Audio play rates
 - **Button Click Rates:** CTA effectiveness
 - **Pricing Section Views:** Interest in pricing
+- **Add to Cart Events:** Package interest tracking
 
 ## 🎯 Facebook Ads Integration
 
@@ -132,6 +189,7 @@ trackButtonClick(buttonName, location);
 3. Pricing Viewers (Pricing View)
 4. Lead Submitters (Lead)
 5. WhatsApp Clickers (Contact)
+6. Package Interested (Add to Cart)
 ```
 
 ### Lookalike Audiences
@@ -140,6 +198,7 @@ trackButtonClick(buttonName, location);
 1. Lead Submitters (highest value)
 2. WhatsApp Clickers (high intent)
 3. Portfolio Engagers (engaged users)
+4. Add to Cart Users (high purchase intent)
 ```
 
 ### Conversion Campaigns
@@ -148,9 +207,69 @@ trackButtonClick(buttonName, location);
 1. Lead Events (primary conversion)
 2. WhatsApp Contact (secondary conversion)
 3. Portfolio Play (engagement)
+4. Add to Cart (purchase intent)
 ```
 
 ## 🔧 Advanced Configuration
+
+### Facebook Conversion API Setup
+
+#### 1. Access Token Configuration
+Access token sudah dikonfigurasi di environment variables:
+```bash
+FACEBOOK_ACCESS_TOKEN=EAAIJbU65rIYBPtxQhAc8QYm0XQymOZARegt6nsveZAjDaMLfZBZBKBv1ZBWY7jCDWZAHmTwxcYZCGsuc1FZA2UfX1ZCZCg0lSTVZA2ypsZAg3Ihq9i11M2xcJDNZC3oP33xow3VmtB0ZCayANHURKQuYIE3z6nBFshLFIK71p5YryFUUhgFWxYv1na1FqtiU0xxnkz7CqYfgZDZD
+```
+
+#### 2. Server-Side Tracking Functions
+```javascript
+// Import server actions
+import { 
+  trackLeadServer,
+  trackWhatsAppContactServer,
+  trackPortfolioPlayServer,
+  trackPricingViewServer,
+  trackButtonClickServer,
+  trackDualEvent
+} from '@/lib/facebook-server-actions';
+
+// Dual tracking (client + server)
+await trackDualEvent('lead', {
+  businessName: 'Warung Makan Sederhana',
+  source: 'jasabuatlagu_page',
+  userEmail: 'user@example.com',
+  userPhone: '+6281234567890'
+});
+
+// Add to Cart tracking
+await trackDualEvent('addtocart', {
+  businessName: 'Warung Makan Sederhana',
+  packageName: 'Paket Jingle UMKM',
+  packageValue: 199000,
+  currency: 'IDR',
+  userEmail: 'user@example.com',
+  userPhone: '+6281234567890'
+});
+```
+
+#### 3. Privacy Compliance
+- User data di-hash dengan SHA-256
+- Email dan phone number di-hash sebelum dikirim
+- IP address dan user agent di-track untuk attribution
+- Facebook browser ID (fbp) di-extract dari cookies
+
+#### 4. Error Handling
+```javascript
+try {
+  const result = await trackLeadServer(businessName, source, userEmail, userPhone);
+  if (result.success) {
+    console.log('Server-side tracking successful:', result.result);
+  } else {
+    console.error('Server-side tracking failed:', result.error);
+  }
+} catch (error) {
+  console.error('Tracking error:', error);
+}
+```
 
 ### Custom Events
 ```javascript

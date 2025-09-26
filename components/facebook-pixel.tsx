@@ -143,6 +143,23 @@ export const trackButtonClick = (buttonName: string, location: string) => {
   });
 };
 
+export const trackAddToCart = (
+  businessName: string,
+  packageName: string = 'Paket Jingle UMKM',
+  packageValue: number = 199000,
+  currency: string = 'IDR'
+) => {
+  trackEvent('AddToCart', {
+    content_name: packageName,
+    content_category: 'Jingle Package',
+    content_type: 'service',
+    value: packageValue,
+    currency: currency,
+    business_name: businessName,
+    num_items: 1
+  });
+};
+
 // Utility function to clear tracked events (useful for testing)
 export const clearTrackedEvents = () => {
   if (typeof window !== 'undefined') {

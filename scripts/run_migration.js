@@ -38,3 +38,4 @@ console.log('💡 Next steps:');
 console.log('- Run the SQL in Supabase SQL Editor');
 console.log('- Test the popup functionality');
 console.log('- Check the business_inquiries table in your Supabase dashboard');
+

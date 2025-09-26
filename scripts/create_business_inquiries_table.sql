@@ -58,3 +58,4 @@ INSERT INTO business_inquiries (business_name, status, source) VALUES
     ('Toko Kelontong Jaya', 'new', 'jasabuatlagu_page'),
     ('Salon Cantik', 'contacted', 'jasabuatlagu_page')
 ON CONFLICT DO NOTHING;
+
