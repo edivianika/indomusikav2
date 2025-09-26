@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 import { trackLead, trackWhatsAppClick, trackPortfolioPlay, trackPricingView, trackButtonClick, trackAddToCart } from '@/components/facebook-pixel';
+import { trackLeadServer, trackWhatsAppContactServer, trackAddToCartServer } from '@/lib/facebook-server-actions';
 import { 
   Music, 
   CheckCircle, 
@@ -32,6 +33,7 @@ export default function JasaBuatLaguPage() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [showPopup, setShowPopup] = useState(false);
   const [businessName, setBusinessName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customerServices, setCustomerServices] = useState<any[]>([]);
   const [currentCSIndex, setCurrentCSIndex] = useState(0);
@@ -233,6 +235,11 @@ export default function JasaBuatLaguPage() {
       alert('Mohon masukkan nama usaha Anda');
       return;
     }
+    
+    if (!phoneNumber.trim()) {
+      alert('Mohon masukkan nomor WhatsApp Anda');
+      return;
+    }
 
     setIsSubmitting(true);
     
@@ -251,6 +258,7 @@ export default function JasaBuatLaguPage() {
           .insert([
             {
               business_name: businessName.trim(),
+              phone_number: phoneNumber.trim(),
               created_at: new Date().toISOString(),
               status: 'new',
               cs_id: csId
@@ -266,10 +274,20 @@ export default function JasaBuatLaguPage() {
         // Continue with WhatsApp redirect even if database fails
       }
 
-      // Track lead, WhatsApp click, and Add to Cart
+      // Track lead, WhatsApp click, and Add to Cart (Client-side)
       trackLead(businessName.trim(), 'jasabuatlagu_page');
       trackWhatsAppClick(businessName.trim(), csName);
       trackAddToCart(businessName.trim(), 'Paket Jingle UMKM', 199000, 'IDR');
+      
+      // Track server-side events with phone number
+      try {
+        await trackLeadServer(businessName.trim(), 'jasabuatlagu_page', undefined, phoneNumber.trim());
+        await trackWhatsAppContactServer(businessName.trim(), csName, undefined, phoneNumber.trim());
+        await trackAddToCartServer(businessName.trim(), 'Paket Jingle UMKM', 199000, 'IDR', undefined, phoneNumber.trim());
+      } catch (serverError) {
+        console.warn('Server-side tracking failed:', serverError);
+        // Continue with client-side tracking only
+      }
       
       // Always redirect to WhatsApp regardless of database status
       const message = encodeURIComponent(
@@ -280,6 +298,7 @@ export default function JasaBuatLaguPage() {
       // Close popup
       setShowPopup(false);
       setBusinessName('');
+      setPhoneNumber('');
       
         } catch (error) {
           console.error('Unexpected error:', error);
@@ -288,10 +307,20 @@ export default function JasaBuatLaguPage() {
           const csPhone = currentCS?.nohp || '6289524955768'; // Fallback to Ridha's number
           const csName = currentCS?.nama || 'Customer Service';
       
-      // Track lead, WhatsApp click, and Add to Cart for fallback
+      // Track lead, WhatsApp click, and Add to Cart for fallback (Client-side)
       trackLead(businessName.trim(), 'jasabuatlagu_page');
       trackWhatsAppClick(businessName.trim(), csName);
       trackAddToCart(businessName.trim(), 'Paket Jingle UMKM', 199000, 'IDR');
+      
+      // Track server-side events with phone number for fallback
+      try {
+        await trackLeadServer(businessName.trim(), 'jasabuatlagu_page', undefined, phoneNumber.trim());
+        await trackWhatsAppContactServer(businessName.trim(), csName, undefined, phoneNumber.trim());
+        await trackAddToCartServer(businessName.trim(), 'Paket Jingle UMKM', 199000, 'IDR', undefined, phoneNumber.trim());
+      } catch (serverError) {
+        console.warn('Server-side tracking failed in fallback:', serverError);
+        // Continue with client-side tracking only
+      }
       
       const message = encodeURIComponent(
         `Halo ${csName}! Saya ${businessName.trim()}, tertarik dengan jasa buat lagu UMKM. Bisa info lebih detail tentang paket 2 lagu original dengan harga Rp199K?`
@@ -300,6 +329,7 @@ export default function JasaBuatLaguPage() {
       
       setShowPopup(false);
       setBusinessName('');
+      setPhoneNumber('');
     } finally {
       setIsSubmitting(false);
     }
@@ -1009,11 +1039,27 @@ export default function JasaBuatLaguPage() {
               />
             </div>
             
+            <div className="mb-4">
+              <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-2">
+                No WA
+              </label>
+              <input
+                type="tel"
+                id="phoneNumber"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="Contoh: 081234567890"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                disabled={isSubmitting}
+              />
+            </div>
+            
             <div className="flex space-x-3">
               <button
                 onClick={() => {
                   setShowPopup(false);
                   setBusinessName('');
+                  setPhoneNumber('');
                 }}
                 className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                 disabled={isSubmitting}
