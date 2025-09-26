@@ -291,7 +291,9 @@ export default function JasaBuatLaguPage() {
       
       // Always redirect to WhatsApp regardless of database status
       const message = encodeURIComponent(
-        `Halo ${csName}! Saya ${businessName.trim()}, tertarik dengan jasa buat lagu UMKM. Bisa info lebih detail tentang paket 2 lagu original dengan harga Rp199K?`
+        `Halo ${csName}, saya tertarik dengan jasa pembuatan lagu untuk UMKM. Boleh minta info lebih detail tentang paket 2 lagu original Rp199K?
+Salam,
+${businessName.trim()}`
       );
       window.open(`https://wa.me/${csPhone}?text=${message}`, '_blank');
       
@@ -323,7 +325,9 @@ export default function JasaBuatLaguPage() {
       }
       
       const message = encodeURIComponent(
-        `Halo ${csName}! Saya ${businessName.trim()}, tertarik dengan jasa buat lagu UMKM. Bisa info lebih detail tentang paket 2 lagu original dengan harga Rp199K?`
+        `Halo ${csName}, saya tertarik dengan jasa pembuatan lagu untuk UMKM. Boleh minta info lebih detail tentang paket 2 lagu original Rp199K?
+Salam,
+${businessName.trim()}`
       );
       window.open(`https://wa.me/${csPhone}?text=${message}`, '_blank');
       
