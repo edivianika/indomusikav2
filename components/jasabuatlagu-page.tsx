@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
-import { trackLead, trackWhatsAppClick, trackPortfolioPlay, trackPricingView, trackButtonClick } from '@/components/facebook-pixel';
+import { trackLead, trackWhatsAppClick, trackPortfolioPlay, trackPricingView, trackButtonClick, trackAddToCart } from '@/components/facebook-pixel';
 import { 
   Music, 
   CheckCircle, 
@@ -266,9 +266,10 @@ export default function JasaBuatLaguPage() {
         // Continue with WhatsApp redirect even if database fails
       }
 
-      // Track lead and WhatsApp click
+      // Track lead, WhatsApp click, and Add to Cart
       trackLead(businessName.trim(), 'jasabuatlagu_page');
       trackWhatsAppClick(businessName.trim(), csName);
+      trackAddToCart(businessName.trim(), 'Paket Jingle UMKM', 199000, 'IDR');
       
       // Always redirect to WhatsApp regardless of database status
       const message = encodeURIComponent(
@@ -287,9 +288,10 @@ export default function JasaBuatLaguPage() {
           const csPhone = currentCS?.nohp || '6289524955768'; // Fallback to Ridha's number
           const csName = currentCS?.nama || 'Customer Service';
       
-      // Track lead and WhatsApp click for fallback
+      // Track lead, WhatsApp click, and Add to Cart for fallback
       trackLead(businessName.trim(), 'jasabuatlagu_page');
       trackWhatsAppClick(businessName.trim(), csName);
+      trackAddToCart(businessName.trim(), 'Paket Jingle UMKM', 199000, 'IDR');
       
       const message = encodeURIComponent(
         `Halo ${csName}! Saya ${businessName.trim()}, tertarik dengan jasa buat lagu UMKM. Bisa info lebih detail tentang paket 2 lagu original dengan harga Rp199K?`
