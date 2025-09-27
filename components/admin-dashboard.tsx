@@ -60,64 +60,19 @@ export default function AdminDashboard() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
 
-  // Fetch leads with CS information
+  // Fetch leads with CS information via API route
   const fetchLeads = async () => {
     try {
-      const supabase = createClient();
-      
-      // Fetch leads with CS information
-      const { data: leadsData, error: leadsError } = await supabase
-        .from('business_inquiries')
-        .select(`
-          *,
-          customer_services!inner(nama, nohp)
-        `)
-        .order('created_at', { ascending: false });
+      const response = await fetch('/api/admin/leads');
+      const data = await response.json();
 
-      if (leadsError) {
-        console.error('Error fetching leads:', leadsError);
+      if (!response.ok) {
+        console.error('Error fetching leads:', data.error);
         return;
       }
 
-      // Transform data to include CS name
-      const transformedLeads = leadsData?.map(lead => ({
-        ...lead,
-        cs_name: lead.customer_services?.nama || 'Unknown CS'
-      })) || [];
-
-      setLeads(transformedLeads);
-
-      // Calculate stats
-      const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-      const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-
-      const totalLeads = transformedLeads.length;
-      const todayLeads = transformedLeads.filter(lead => 
-        new Date(lead.created_at) >= today
-      ).length;
-      const thisWeekLeads = transformedLeads.filter(lead => 
-        new Date(lead.created_at) >= weekAgo
-      ).length;
-      const thisMonthLeads = transformedLeads.filter(lead => 
-        new Date(lead.created_at) >= monthAgo
-      ).length;
-      const pendingLeads = transformedLeads.filter(lead => 
-        lead.status === 'new' || lead.status === 'pending'
-      ).length;
-      const completedLeads = transformedLeads.filter(lead => 
-        lead.status === 'completed' || lead.status === 'closed'
-      ).length;
-
-      setStats({
-        total_leads: totalLeads,
-        today_leads: todayLeads,
-        this_week_leads: thisWeekLeads,
-        this_month_leads: thisMonthLeads,
-        pending_leads: pendingLeads,
-        completed_leads: completedLeads
-      });
+      setLeads(data.leads);
+      setStats(data.stats);
 
     } catch (error) {
       console.error('Error fetching leads:', error);
@@ -147,17 +102,20 @@ export default function AdminDashboard() {
     }
   };
 
-  // Update lead status
+  // Update lead status via API route
   const updateLeadStatus = async (leadId: number, newStatus: string) => {
     try {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('business_inquiries')
-        .update({ status: newStatus })
-        .eq('id', leadId);
+      const response = await fetch(`/api/admin/leads/${leadId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
 
-      if (error) {
-        console.error('Error updating lead status:', error);
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Error updating lead status:', errorData.error);
         return;
       }
 
