@@ -37,6 +37,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [csFilter, setCsFilter] = useState<string>('');
+  const [csList, setCsList] = useState<{id: number, nama: string}[]>([]);
   const [notifications, setNotifications] = useState<string[]>([]);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [showNewLeadBadge, setShowNewLeadBadge] = useState(false);
@@ -44,6 +45,20 @@ export default function AdminDashboard() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const supabase = createClient();
+
+  // Fetch CS list
+  const fetchCsList = useCallback(async () => {
+    try {
+      const response = await fetch('/api/admin/cs-list');
+      if (!response.ok) {
+        throw new Error('Failed to fetch CS list');
+      }
+      const data = await response.json();
+      setCsList(data.csList || []);
+    } catch (error) {
+      console.error('Error fetching CS list:', error);
+    }
+  }, []);
 
   // Fetch leads data
   const fetchLeads = useCallback(async () => {
@@ -236,7 +251,8 @@ Kami siap membantu membuat jingle yang sesuai dengan kebutuhan bisnis Kakak!`);
       }
     }
     fetchLeads();
-  }, [searchParams, fetchLeads]);
+    fetchCsList();
+  }, [searchParams, fetchLeads, fetchCsList]);
 
   // Real-time subscription for new leads
   useEffect(() => {
@@ -446,13 +462,18 @@ Kami siap membantu membuat jingle yang sesuai dengan kebutuhan bisnis Kakak!`);
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Filter by CS
             </label>
-            <input
-              type="text"
+            <select
               value={csFilter}
               onChange={(e) => handleCsFilterChange(e.target.value)}
-              placeholder="Filter by CS name..."
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            />
+            >
+              <option value="">All CS</option>
+              {csList.map((cs) => (
+                <option key={cs.id} value={cs.nama}>
+                  {cs.nama}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       </div>
