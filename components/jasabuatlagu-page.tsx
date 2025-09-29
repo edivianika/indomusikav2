@@ -232,7 +232,7 @@ export default function JasaBuatLaguPage() {
 
   const handleSubmitBusinessName = async () => {
     if (!businessName.trim()) {
-      alert('Mohon masukkan nama usaha Anda');
+      alert('Mohon masukkan nama Anda');
       return;
     }
     
@@ -1043,7 +1043,7 @@ ${businessName.trim()}`
             
             <div className="mb-4">
               <label htmlFor="businessName" className="block text-sm font-medium text-gray-700 mb-2">
-                Nama Usaha
+                Nama
               </label>
               <input
                 type="text"
