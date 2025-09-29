@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { 
   Users, 
@@ -45,6 +46,8 @@ interface LeadStats {
 }
 
 export default function AdminDashboard() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [customerServices, setCustomerServices] = useState<CS[]>([]);
   const [stats, setStats] = useState<LeadStats>({
@@ -59,6 +62,7 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
+  const [csFilter, setCsFilter] = useState('all');
 
   // Fetch leads with CS information via API route
   const fetchLeads = async () => {
@@ -129,7 +133,7 @@ export default function AdminDashboard() {
   // Filter leads
   const filteredLeads = leads.filter(lead => {
     const matchesSearch = lead.business_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lead.phone_number.includes(searchTerm) ||
+                         lead.phone_number?.includes(searchTerm) ||
                          lead.cs_name?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
@@ -149,7 +153,9 @@ export default function AdminDashboard() {
       matchesDate = leadDate >= monthAgo;
     }
     
-    return matchesSearch && matchesStatus && matchesDate;
+    const matchesCS = csFilter === 'all' || lead.cs_name?.toLowerCase() === csFilter.toLowerCase();
+    
+    return matchesSearch && matchesStatus && matchesDate && matchesCS;
   });
 
   // Export leads to CSV
@@ -175,6 +181,14 @@ export default function AdminDashboard() {
     window.URL.revokeObjectURL(url);
   };
 
+  // Handle query parameters
+  useEffect(() => {
+    const csParam = searchParams.get('cs');
+    if (csParam) {
+      setCsFilter(csParam);
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     fetchLeads();
     fetchCustomerServices();
@@ -187,6 +201,18 @@ export default function AdminDashboard() {
     return () => clearInterval(interval);
   }, []);
 
+  // Update URL when CS filter changes
+  const handleCsFilterChange = (newCsFilter: string) => {
+    setCsFilter(newCsFilter);
+    const params = new URLSearchParams(searchParams.toString());
+    if (newCsFilter === 'all') {
+      params.delete('cs');
+    } else {
+      params.set('cs', newCsFilter);
+    }
+    router.push(`/admin?${params.toString()}`);
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('id-ID', {
       year: 'numeric',
@@ -195,6 +221,20 @@ export default function AdminDashboard() {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  // Open WhatsApp chat
+  const openWhatsApp = (phoneNumber: string) => {
+    if (!phoneNumber) return;
+    
+    // Clean phone number (remove spaces, dashes, etc.)
+    const cleanNumber = phoneNumber.replace(/[^\d]/g, '');
+    
+    // Add country code if not present
+    const whatsappNumber = cleanNumber.startsWith('62') ? cleanNumber : `62${cleanNumber}`;
+    
+    // Open WhatsApp
+    window.open(`https://wa.me/${whatsappNumber}`, '_blank');
   };
 
   const getStatusColor = (status: string) => {
@@ -332,7 +372,7 @@ export default function AdminDashboard() {
         {/* Filters */}
         <div className="bg-white rounded-lg shadow mb-6">
           <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Search
@@ -379,6 +419,24 @@ export default function AdminDashboard() {
                   <option value="today">Today</option>
                   <option value="week">This Week</option>
                   <option value="month">This Month</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Customer Service
+                </label>
+                <select
+                  value={csFilter}
+                  onChange={(e) => handleCsFilterChange(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                >
+                  <option value="all">All CS</option>
+                  {customerServices.map(cs => (
+                    <option key={cs.id} value={cs.nama.toLowerCase()}>
+                      {cs.nama}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -434,7 +492,17 @@ export default function AdminDashboard() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <Phone className="w-4 h-4 text-gray-400 mr-2" />
-                        <div className="text-sm text-gray-900">{lead.phone_number}</div>
+                        {lead.phone_number ? (
+                          <button
+                            onClick={() => openWhatsApp(lead.phone_number)}
+                            className="text-sm text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                            title="Click to open WhatsApp"
+                          >
+                            {lead.phone_number}
+                          </button>
+                        ) : (
+                          <div className="text-sm text-gray-400">No phone</div>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
