@@ -237,8 +237,21 @@ export default function AdminDashboard() {
     // Add country code if not present
     const whatsappNumber = cleanNumber.startsWith('62') ? cleanNumber : `62${cleanNumber}`;
     
-    // Open WhatsApp
-    window.open(`https://wa.me/${whatsappNumber}`, '_blank');
+    // Follow-up message for admin
+    const followUpMessage = encodeURIComponent(`Halo Kak 👋
+Terima kasih sudah tertarik dengan layanan pembuatan jingle di Indomusika.
+Apakah Kakak ingin lanjutkan pemesanan jinglenya? 😊
+
+✨ Paket best seller kami:
+✅ 2 Lagu Original
+✅ Free Lirik & Revisi
+✅ Hak Pakai Komersial
+Hanya Rp199.000
+
+Kalau setuju, boleh langsung kirim detail usaha Kakak (nama usaha + jenis usaha), biar tim kami segera proses 🎶`);
+    
+    // Open WhatsApp with pre-filled message
+    window.open(`https://wa.me/${whatsappNumber}?text=${followUpMessage}`, '_blank');
   };
 
   const getStatusColor = (status: string) => {
