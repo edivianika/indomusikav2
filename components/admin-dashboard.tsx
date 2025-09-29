@@ -1,25 +1,9 @@
 'use client';
+
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { 
-  Users, 
-  MessageCircle, 
-  TrendingUp, 
-  Clock, 
-  CheckCircle,
-  AlertCircle,
-  RefreshCw,
-  Download,
-  Filter,
-  Search,
-  Calendar,
-  Phone,
-  Building,
-  User,
-  Bell,
-  Volume2
-} from 'lucide-react';
+import { Bell, Volume2, VolumeX } from 'lucide-react';
 
 interface Lead {
   id: number;
@@ -27,64 +11,51 @@ interface Lead {
   phone_number: string;
   created_at: string;
   status: string;
-  cs_id: number;
   cs_name?: string;
-}
-
-interface CS {
-  id: number;
-  nama: string;
-  nohp: string;
-  status: boolean;
+  cs_id?: number;
 }
 
 interface LeadStats {
-  total_leads: number;
-  today_leads: number;
-  this_week_leads: number;
-  this_month_leads: number;
-  pending_leads: number;
-  completed_leads: number;
+  totalLeads: number;
+  pendingLeads: number;
+  completedLeads: number;
+  newLeads: number;
 }
 
 export default function AdminDashboard() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [customerServices, setCustomerServices] = useState<CS[]>([]);
   const [stats, setStats] = useState<LeadStats>({
-    total_leads: 0,
-    today_leads: 0,
-    this_week_leads: 0,
-    this_month_leads: 0,
-    pending_leads: 0,
-    completed_leads: 0
+    totalLeads: 0,
+    pendingLeads: 0,
+    completedLeads: 0,
+    newLeads: 0
   });
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [dateFilter, setDateFilter] = useState('all');
-  const [csFilter, setCsFilter] = useState('all');
-  const [notifications, setNotifications] = useState<Lead[]>([]);
+  const [csFilter, setCsFilter] = useState<string>('');
+  const [notifications, setNotifications] = useState<string[]>([]);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [showNewLeadBadge, setShowNewLeadBadge] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const supabase = createClient();
 
-  // Fetch leads with CS information via API route
+  // Fetch leads data
   const fetchLeads = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/leads');
-      const data = await response.json();
-
       if (!response.ok) {
-        console.error('Error fetching leads:', data.error);
-        return;
+        throw new Error('Failed to fetch leads');
       }
-
-      setLeads(data.leads);
-      setStats(data.stats);
-
+      const data = await response.json();
+      setLeads(data.leads || []);
+      setStats(data.stats || {
+        totalLeads: 0,
+        pendingLeads: 0,
+        completedLeads: 0,
+        newLeads: 0
+      });
     } catch (error) {
       console.error('Error fetching leads:', error);
     } finally {
@@ -99,7 +70,106 @@ export default function AdminDashboard() {
     }
   };
 
-  // Setup real-time subscription for new leads
+  // Handle CS filter change
+  const handleCsFilterChange = (cs: string) => {
+    setCsFilter(cs);
+    if (searchParams) {
+      const params = new URLSearchParams(searchParams);
+      if (cs) {
+        params.set('cs', cs);
+      } else {
+        params.delete('cs');
+      }
+      router.push(`/admin?${params.toString()}`);
+    }
+  };
+
+  // Open WhatsApp
+  const openWhatsApp = (phoneNumber: string) => {
+    const cleanNumber = phoneNumber.replace(/[^\d]/g, '');
+    
+    // Add country code if not present
+    const whatsappNumber = cleanNumber.startsWith('62') ? cleanNumber : `62${cleanNumber}`;
+    
+    // Follow-up message for admin
+    const followUpMessage = encodeURIComponent(`Halo Kak 👋
+Terima kasih sudah tertarik dengan layanan pembuatan jingle di Indomusika.
+Apakah Kakak ingin lanjutkan pemesanan jinglenya? 😊
+
+Kami siap membantu membuat jingle yang sesuai dengan kebutuhan bisnis Kakak!`);
+
+    window.open(`https://wa.me/${whatsappNumber}?text=${followUpMessage}`, '_blank');
+  };
+
+  // Update lead status
+  const updateLeadStatus = async (leadId: number, newStatus: string) => {
+    try {
+      const response = await fetch(`/api/admin/leads/${leadId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update lead status');
+      }
+
+      // Update local state
+      setLeads(prevLeads =>
+        prevLeads.map(lead =>
+          lead.id === leadId ? { ...lead, status: newStatus } : lead
+        )
+      );
+
+      // Refresh stats
+      await fetchLeads();
+    } catch (error) {
+      console.error('Error updating lead status:', error);
+    }
+  };
+
+  // Get status color
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'new':
+        return 'bg-blue-100 text-blue-800';
+      case 'followup':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'membuat lirik':
+        return 'bg-purple-100 text-purple-800';
+      case 'cancel':
+        return 'bg-red-100 text-red-800';
+      case 'closed':
+        return 'bg-green-100 text-green-800';
+      case 'no tidak terdaftar':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  // Filter leads
+  const filteredLeads = leads.filter(lead => {
+    const matchesSearch = lead.business_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         lead.phone_number.includes(searchTerm);
+    const matchesCS = !csFilter || lead.cs_name?.toLowerCase().includes(csFilter.toLowerCase());
+    return matchesSearch && matchesCS;
+  }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  // Initialize
+  useEffect(() => {
+    if (searchParams) {
+      const cs = searchParams.get('cs');
+      if (cs) {
+        setCsFilter(cs);
+      }
+    }
+    fetchLeads();
+  }, [searchParams, fetchLeads]);
+
+  // Real-time subscription for new leads
   useEffect(() => {
     const channel = supabase
       .channel('business_inquiries_changes')
@@ -112,10 +182,12 @@ export default function AdminDashboard() {
         },
         (payload) => {
           console.log('New lead detected:', payload);
-          const newLead = payload.new as Lead;
           
-          // Add to notifications
-          setNotifications(prev => [newLead, ...prev]);
+          // Show notification
+          setNotifications(prev => [
+            ...prev,
+            `New lead: ${payload.new.business_name}`
+          ]);
           
           // Show new lead badge
           setShowNewLeadBadge(true);
@@ -123,11 +195,13 @@ export default function AdminDashboard() {
           // Play sound
           playNotificationSound();
           
-          // Refresh leads data
+          // Refresh data
           fetchLeads();
           
           // Hide badge after 5 seconds
-          setTimeout(() => setShowNewLeadBadge(false), 5000);
+          setTimeout(() => {
+            setShowNewLeadBadge(false);
+          }, 5000);
         }
       )
       .subscribe();
@@ -135,530 +209,228 @@ export default function AdminDashboard() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [soundEnabled, fetchLeads, supabase]);
-
-  // Fetch customer services
-  const fetchCustomerServices = async () => {
-    try {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('customer_services')
-        .select('*')
-        .eq('status', true)
-        .order('id');
-
-      if (error) {
-        console.error('Error fetching customer services:', error);
-        return;
-      }
-
-      setCustomerServices(data || []);
-    } catch (error) {
-      console.error('Error fetching customer services:', error);
-    }
-  };
-
-  // Update lead status via API route
-  const updateLeadStatus = async (leadId: number, newStatus: string) => {
-    try {
-      const response = await fetch(`/api/admin/leads/${leadId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Error updating lead status:', errorData.error);
-        return;
-      }
-
-      // Refresh leads
-      await fetchLeads();
-    } catch (error) {
-      console.error('Error updating lead status:', error);
-    }
-  };
-
-  // Filter leads
-  const filteredLeads = leads.filter(lead => {
-    const matchesSearch = lead.business_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lead.phone_number?.includes(searchTerm) ||
-                         lead.cs_name?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
-    
-    const leadDate = new Date(lead.created_at);
-    const now = new Date();
-    let matchesDate = true;
-    
-    if (dateFilter === 'today') {
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      matchesDate = leadDate >= today;
-    } else if (dateFilter === 'week') {
-      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      matchesDate = leadDate >= weekAgo;
-    } else if (dateFilter === 'month') {
-      const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      matchesDate = leadDate >= monthAgo;
-    }
-    
-    const matchesCS = csFilter === 'all' || lead.cs_name?.toLowerCase() === csFilter.toLowerCase();
-    
-    return matchesSearch && matchesStatus && matchesDate && matchesCS;
-  }).sort((a, b) => {
-    // Sort by created_at descending (newest first)
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-  });
-
-  // Export leads to CSV
-  const exportToCSV = () => {
-    const csvContent = [
-      ['ID', 'Business Name', 'Phone Number', 'CS Name', 'Status', 'Created At'],
-      ...filteredLeads.map(lead => [
-        lead.id,
-        lead.business_name,
-        lead.phone_number,
-        lead.cs_name || 'Unknown',
-        lead.status,
-        new Date(lead.created_at).toLocaleString('id-ID')
-      ])
-    ].map(row => row.join(',')).join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `leads-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
-
-  // Handle query parameters
-  useEffect(() => {
-    if (searchParams) {
-      const csParam = searchParams.get('cs');
-      if (csParam) {
-        setCsFilter(csParam);
-      }
-    }
-  }, [searchParams]);
-
-  useEffect(() => {
-    fetchLeads();
-    fetchCustomerServices();
-    
-    // Auto refresh every 30 seconds
-    const interval = setInterval(() => {
-      fetchLeads();
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // Update URL when CS filter changes
-  const handleCsFilterChange = (newCsFilter: string) => {
-    setCsFilter(newCsFilter);
-    if (searchParams) {
-      const params = new URLSearchParams(searchParams.toString());
-      if (newCsFilter === 'all') {
-        params.delete('cs');
-      } else {
-        params.set('cs', newCsFilter);
-      }
-      router.push(`/admin?${params.toString()}`);
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('id-ID', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  // Open WhatsApp chat
-  const openWhatsApp = (phoneNumber: string) => {
-    if (!phoneNumber) return;
-    
-    // Clean phone number (remove spaces, dashes, etc.)
-    const cleanNumber = phoneNumber.replace(/[^\d]/g, '');
-    
-    // Add country code if not present
-    const whatsappNumber = cleanNumber.startsWith('62') ? cleanNumber : `62${cleanNumber}`;
-    
-    // Follow-up message for admin
-    const followUpMessage = encodeURIComponent(`Halo Kak 👋
-Terima kasih sudah tertarik dengan layanan pembuatan jingle di Indomusika.
-Apakah Kakak ingin lanjutkan pemesanan jinglenya? 😊
-
-✨ Paket best seller kami:
-✅ 2 Lagu Original
-✅ Free Lirik & Revisi
-✅ Hak Pakai Komersial
-Hanya Rp199.000
-
-Kalau setuju, boleh langsung kirim detail usaha Kakak (nama usaha + jenis usaha), biar tim kami segera proses 🎶`);
-    
-    // Open WhatsApp with pre-filled message
-    window.open(`https://wa.me/${whatsappNumber}?text=${followUpMessage}`, '_blank');
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'new':
-        return 'bg-blue-100 text-blue-800';
-      case 'followup':
-        return 'bg-orange-100 text-orange-800';
-      case 'membuat_lirik':
-        return 'bg-purple-100 text-purple-800';
-      case 'no_tidak_terdaftar':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'cancel':
-        return 'bg-red-100 text-red-800';
-      case 'closed':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+  }, [supabase, fetchLeads]);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-green-600" />
-          <p className="text-gray-600">Loading dashboard...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading admin dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 p-6">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center space-x-4">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-                <p className="text-gray-600">Monitor leads and customer service performance</p>
-              </div>
-              {showNewLeadBadge && (
-                <div className="flex items-center px-3 py-1 bg-red-500 text-white rounded-full animate-pulse">
-                  <Bell className="w-4 h-4 mr-1" />
-                  <span className="text-sm font-semibold">New Lead!</span>
-                </div>
-              )}
-            </div>
-            <div className="flex space-x-3">
-              <button
-                onClick={() => setSoundEnabled(!soundEnabled)}
-                className={`flex items-center px-3 py-2 rounded-lg transition-colors ${
-                  soundEnabled 
-                    ? 'bg-green-600 text-white hover:bg-green-700' 
-                    : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
-                }`}
-                title={soundEnabled ? 'Sound notifications ON' : 'Sound notifications OFF'}
-              >
-                <Volume2 className="w-4 h-4" />
-              </button>
-              <button
-                onClick={fetchLeads}
-                className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Refresh
-              </button>
-              <button
-                onClick={exportToCSV}
-                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Export CSV
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Users className="w-6 h-6 text-blue-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Leads</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.total_leads}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <TrendingUp className="w-6 h-6 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Today</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.today_leads}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Calendar className="w-6 h-6 text-purple-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">This Week</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.this_week_leads}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <Clock className="w-6 h-6 text-orange-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">This Month</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.this_month_leads}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <AlertCircle className="w-6 h-6 text-yellow-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Pending</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.pending_leads}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <CheckCircle className="w-6 h-6 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Completed</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.completed_leads}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Filters */}
-        <div className="bg-white rounded-lg shadow mb-6">
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Search
-                </label>
-                <div className="relative">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search by business name, phone, or CS..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Status
-                </label>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                >
-                  <option value="all">All Status</option>
-                  <option value="new">New</option>
-                  <option value="followup">Followup</option>
-                  <option value="membuat_lirik">Membuat Lirik</option>
-                  <option value="no_tidak_terdaftar">No Tidak Terdaftar</option>
-                  <option value="cancel">Cancel</option>
-                  <option value="closed">Closed</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Date Range
-                </label>
-                <select
-                  value={dateFilter}
-                  onChange={(e) => setDateFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                >
-                  <option value="all">All Time</option>
-                  <option value="today">Today</option>
-                  <option value="week">This Week</option>
-                  <option value="month">This Month</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Customer Service
-                </label>
-                <select
-                  value={csFilter}
-                  onChange={(e) => handleCsFilterChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                >
-                  <option value="all">All CS</option>
-                  {customerServices.map(cs => (
-                    <option key={cs.id} value={cs.nama.toLowerCase()}>
-                      {cs.nama}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Leads Table */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">
-              Leads ({filteredLeads.length})
-            </h3>
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+            <p className="text-gray-600 mt-2">Monitor leads and customer service performance</p>
           </div>
           
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Business
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Contact
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    CS Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Created
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredLeads.map((lead) => (
-                  <tr key={lead.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <Building className="w-4 h-4 text-gray-400 mr-2" />
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {lead.business_name}
-                          </div>
-                          <div className="text-sm text-gray-500">ID: {lead.id}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <Phone className="w-4 h-4 text-gray-400 mr-2" />
-                        {lead.phone_number ? (
-                          <button
-                            onClick={() => openWhatsApp(lead.phone_number)}
-                            className="text-sm text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
-                            title="Click to open WhatsApp"
-                          >
-                            {lead.phone_number}
-                          </button>
-                        ) : (
-                          <div className="text-sm text-gray-400">No phone</div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <User className="w-4 h-4 text-gray-400 mr-2" />
-                        <div className="text-sm text-gray-900">{lead.cs_name}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <select
-                        value={lead.status}
-                        onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
-                        className={`text-xs font-semibold rounded-full px-2 py-1 border-0 ${getStatusColor(lead.status)}`}
-                      >
-                        <option value="new">New</option>
-                        <option value="followup">Followup</option>
-                        <option value="membuat_lirik">Membuat Lirik</option>
-                        <option value="no_tidak_terdaftar">No Tidak Terdaftar</option>
-                        <option value="cancel">Cancel</option>
-                        <option value="closed">Closed</option>
-                      </select>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(lead.created_at)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => openWhatsApp(lead.phone_number)}
-                          className="text-green-600 hover:text-green-900"
-                          title="Send WhatsApp follow-up"
-                        >
-                          WhatsApp
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {/* Sound toggle and notification badge */}
+          <div className="flex items-center space-x-4">
+            {showNewLeadBadge && (
+              <div className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium animate-pulse">
+                New Lead!
+              </div>
+            )}
+            
+            <button
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              className={`p-2 rounded-lg transition-colors ${
+                soundEnabled 
+                  ? 'bg-green-100 text-green-600 hover:bg-green-200' 
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+              title={soundEnabled ? 'Disable sound notifications' : 'Enable sound notifications'}
+            >
+              {soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Bell className="h-6 w-6 text-blue-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Total Leads</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.totalLeads}</p>
+            </div>
           </div>
         </div>
 
-        {filteredLeads.length === 0 && (
-          <div className="text-center py-12">
-            <MessageCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No leads found</h3>
-            <p className="text-gray-500">Try adjusting your search or filter criteria.</p>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="p-2 bg-yellow-100 rounded-lg">
+              <Bell className="h-6 w-6 text-yellow-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Pending</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.pendingLeads}</p>
+            </div>
           </div>
-        )}
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="p-2 bg-green-100 rounded-lg">
+              <Bell className="h-6 w-6 text-green-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Completed</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.completedLeads}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="p-2 bg-red-100 rounded-lg">
+              <Bell className="h-6 w-6 text-red-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">New Today</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.newLeads}</p>
+            </div>
+          </div>
+        </div>
       </div>
-      
+
+      {/* Filters */}
+      <div className="bg-white rounded-lg shadow p-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Search Leads
+            </label>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search by business name or phone..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Filter by CS
+            </label>
+            <input
+              type="text"
+              value={csFilter}
+              onChange={(e) => handleCsFilterChange(e.target.value)}
+              placeholder="Filter by CS name..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Leads Table */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-medium text-gray-900">Leads ({filteredLeads.length})</h3>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Business Name
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Phone
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  CS Name
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Created
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredLeads.map((lead) => (
+                <tr key={lead.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">
+                      {lead.business_name}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <button
+                      onClick={() => openWhatsApp(lead.phone_number)}
+                      className="text-sm text-green-600 hover:text-green-800 font-medium"
+                    >
+                      {lead.phone_number}
+                    </button>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {lead.cs_name || 'N/A'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <select
+                      value={lead.status}
+                      onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(lead.status)} border-0 focus:ring-2 focus:ring-green-500`}
+                    >
+                      <option value="new">New</option>
+                      <option value="followup">Followup</option>
+                      <option value="membuat lirik">Membuat Lirik</option>
+                      <option value="cancel">Cancel</option>
+                      <option value="closed">Closed</option>
+                      <option value="no tidak terdaftar">No Tidak Terdaftar</option>
+                    </select>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {new Date(lead.created_at).toLocaleDateString('id-ID', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <button
+                      onClick={() => openWhatsApp(lead.phone_number)}
+                      className="text-green-600 hover:text-green-900 bg-green-50 hover:bg-green-100 px-3 py-1 rounded-lg transition-colors"
+                    >
+                      WhatsApp
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* Audio element for notification sounds */}
       <audio
         ref={audioRef}
         preload="auto"
         style={{ display: 'none' }}
       >
-        <source src="data:audio/wav;base64,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" type="audio/wav" />
+        <source src="/sound.wav" type="audio/wav" />
       </audio>
     </div>
   );
