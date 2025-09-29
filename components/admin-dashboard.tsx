@@ -71,8 +71,20 @@ export default function AdminDashboard() {
 
   // Play notification sound
   const playNotificationSound = () => {
+    console.log('🔊 Attempting to play notification sound...');
+    console.log('Sound enabled:', soundEnabled);
+    console.log('Audio ref:', audioRef.current);
+    
     if (soundEnabled && audioRef.current) {
-      audioRef.current.play().catch(console.error);
+      audioRef.current.play()
+        .then(() => {
+          console.log('✅ Notification sound played successfully');
+        })
+        .catch((error) => {
+          console.error('❌ Error playing notification sound:', error);
+        });
+    } else {
+      console.log('⚠️ Sound disabled or audio ref not available');
     }
   };
 
@@ -177,6 +189,8 @@ Kami siap membantu membuat jingle yang sesuai dengan kebutuhan bisnis Kakak!`);
 
   // Real-time subscription for new leads
   useEffect(() => {
+    console.log('🔄 Setting up real-time subscription...');
+    
     const channel = supabase
       .channel('business_inquiries_changes')
       .on(
@@ -187,7 +201,8 @@ Kami siap membantu membuat jingle yang sesuai dengan kebutuhan bisnis Kakak!`);
           table: 'business_inquiries'
         },
         (payload) => {
-          console.log('New lead detected:', payload);
+          console.log('🔔 New lead detected via real-time:', payload);
+          console.log('Lead data:', payload.new);
           
           // Show notification
           setNotifications(prev => [
@@ -210,9 +225,17 @@ Kami siap membantu membuat jingle yang sesuai dengan kebutuhan bisnis Kakak!`);
           }, 5000);
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('📡 Real-time subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Successfully subscribed to real-time changes');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ Error subscribing to real-time changes');
+        }
+      });
 
     return () => {
+      console.log('🔄 Cleaning up real-time subscription...');
       supabase.removeChannel(channel);
     };
   }, [supabase, fetchLeads]);
@@ -245,6 +268,19 @@ Kami siap membantu membuat jingle yang sesuai dengan kebutuhan bisnis Kakak!`);
                 New Lead!
               </div>
             )}
+            
+            <button
+              onClick={() => {
+                console.log('🧪 Testing notification manually...');
+                setShowNewLeadBadge(true);
+                playNotificationSound();
+                setTimeout(() => setShowNewLeadBadge(false), 3000);
+              }}
+              className="bg-blue-100 text-blue-600 hover:bg-blue-200 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+              title="Test notification sound"
+            >
+              Test Sound
+            </button>
             
             <button
               onClick={() => setSoundEnabled(!soundEnabled)}
