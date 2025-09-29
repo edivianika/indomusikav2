@@ -1078,23 +1078,6 @@ ${businessName.trim()}`
               Masukkan nama usaha Anda agar kami bisa memberikan pelayanan yang lebih personal
             </p>
             
-            {/* Warning Box */}
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <span className="text-yellow-600 text-lg">⚠️</span>
-                </div>
-                <div className="ml-2">
-                  <p className="text-sm text-yellow-800 font-medium">
-                    Perhatian: Pastikan nomor WhatsApp yang Anda masukkan benar dan aktif!
-                  </p>
-                  <p className="text-xs text-yellow-700 mt-1">
-                    Nomor yang salah akan menghambat proses komunikasi dengan tim kami.
-                  </p>
-                </div>
-              </div>
-            </div>
-            
             <div className="mb-4">
               <label htmlFor="businessName" className="block text-sm font-medium text-gray-700 mb-2">
                 Nama
