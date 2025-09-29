@@ -183,9 +183,11 @@ export default function AdminDashboard() {
 
   // Handle query parameters
   useEffect(() => {
-    const csParam = searchParams.get('cs');
-    if (csParam) {
-      setCsFilter(csParam);
+    if (searchParams) {
+      const csParam = searchParams.get('cs');
+      if (csParam) {
+        setCsFilter(csParam);
+      }
     }
   }, [searchParams]);
 
@@ -204,13 +206,15 @@ export default function AdminDashboard() {
   // Update URL when CS filter changes
   const handleCsFilterChange = (newCsFilter: string) => {
     setCsFilter(newCsFilter);
-    const params = new URLSearchParams(searchParams.toString());
-    if (newCsFilter === 'all') {
-      params.delete('cs');
-    } else {
-      params.set('cs', newCsFilter);
+    if (searchParams) {
+      const params = new URLSearchParams(searchParams.toString());
+      if (newCsFilter === 'all') {
+        params.delete('cs');
+      } else {
+        params.set('cs', newCsFilter);
+      }
+      router.push(`/admin?${params.toString()}`);
     }
-    router.push(`/admin?${params.toString()}`);
   };
 
   const formatDate = (dateString: string) => {
