@@ -262,6 +262,8 @@ Kalau setuju, boleh langsung kirim detail usaha Kakak (nama usaha + jenis usaha)
         return 'bg-orange-100 text-orange-800';
       case 'membuat_lirik':
         return 'bg-purple-100 text-purple-800';
+      case 'no_tidak_terdaftar':
+        return 'bg-yellow-100 text-yellow-800';
       case 'cancel':
         return 'bg-red-100 text-red-800';
       case 'closed':
@@ -421,6 +423,7 @@ Kalau setuju, boleh langsung kirim detail usaha Kakak (nama usaha + jenis usaha)
                   <option value="new">New</option>
                   <option value="followup">Followup</option>
                   <option value="membuat_lirik">Membuat Lirik</option>
+                  <option value="no_tidak_terdaftar">No Tidak Terdaftar</option>
                   <option value="cancel">Cancel</option>
                   <option value="closed">Closed</option>
                 </select>
@@ -540,6 +543,7 @@ Kalau setuju, boleh langsung kirim detail usaha Kakak (nama usaha + jenis usaha)
                         <option value="new">New</option>
                         <option value="followup">Followup</option>
                         <option value="membuat_lirik">Membuat Lirik</option>
+                        <option value="no_tidak_terdaftar">No Tidak Terdaftar</option>
                         <option value="cancel">Cancel</option>
                         <option value="closed">Closed</option>
                       </select>

@@ -46,7 +46,7 @@ export async function GET() {
       new Date(lead.created_at) >= monthAgo
     ).length;
     const pendingLeads = transformedLeads.filter(lead => 
-      lead.status === 'new' || lead.status === 'followup' || lead.status === 'membuat_lirik'
+      lead.status === 'new' || lead.status === 'followup' || lead.status === 'membuat_lirik' || lead.status === 'no_tidak_terdaftar'
     ).length;
     const completedLeads = transformedLeads.filter(lead => 
       lead.status === 'closed'
