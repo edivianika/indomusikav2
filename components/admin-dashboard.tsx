@@ -16,19 +16,23 @@ interface Lead {
 }
 
 interface LeadStats {
-  totalLeads: number;
-  pendingLeads: number;
-  completedLeads: number;
-  newLeads: number;
+  total_leads: number;
+  today_leads: number;
+  this_week_leads: number;
+  this_month_leads: number;
+  pending_leads: number;
+  completed_leads: number;
 }
 
 export default function AdminDashboard() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [stats, setStats] = useState<LeadStats>({
-    totalLeads: 0,
-    pendingLeads: 0,
-    completedLeads: 0,
-    newLeads: 0
+    total_leads: 0,
+    today_leads: 0,
+    this_week_leads: 0,
+    this_month_leads: 0,
+    pending_leads: 0,
+    completed_leads: 0
   });
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -51,10 +55,12 @@ export default function AdminDashboard() {
       const data = await response.json();
       setLeads(data.leads || []);
       setStats(data.stats || {
-        totalLeads: 0,
-        pendingLeads: 0,
-        completedLeads: 0,
-        newLeads: 0
+        total_leads: 0,
+        today_leads: 0,
+        this_week_leads: 0,
+        this_month_leads: 0,
+        pending_leads: 0,
+        completed_leads: 0
       });
     } catch (error) {
       console.error('Error fetching leads:', error);
@@ -256,7 +262,7 @@ Kami siap membantu membuat jingle yang sesuai dengan kebutuhan bisnis Kakak!`);
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
             <div className="p-2 bg-blue-100 rounded-lg">
@@ -264,19 +270,7 @@ Kami siap membantu membuat jingle yang sesuai dengan kebutuhan bisnis Kakak!`);
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Leads</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalLeads}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <Bell className="h-6 w-6 text-yellow-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Pending</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.pendingLeads}</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.total_leads}</p>
             </div>
           </div>
         </div>
@@ -287,20 +281,59 @@ Kami siap membantu membuat jingle yang sesuai dengan kebutuhan bisnis Kakak!`);
               <Bell className="h-6 w-6 text-green-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Completed</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.completedLeads}</p>
+              <p className="text-sm font-medium text-gray-600">Hari Ini</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.today_leads}</p>
             </div>
           </div>
         </div>
 
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
-            <div className="p-2 bg-red-100 rounded-lg">
-              <Bell className="h-6 w-6 text-red-600" />
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <Bell className="h-6 w-6 text-purple-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">New Today</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.newLeads}</p>
+              <p className="text-sm font-medium text-gray-600">7 Hari Terakhir</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.this_week_leads}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="p-2 bg-orange-100 rounded-lg">
+              <Bell className="h-6 w-6 text-orange-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Closing</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.completed_leads}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Additional Stats Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="p-2 bg-yellow-100 rounded-lg">
+              <Bell className="h-6 w-6 text-yellow-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Pending (Belum Closing)</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.pending_leads}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="p-2 bg-indigo-100 rounded-lg">
+              <Bell className="h-6 w-6 text-indigo-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">30 Hari Terakhir</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.this_month_leads}</p>
             </div>
           </div>
         </div>
