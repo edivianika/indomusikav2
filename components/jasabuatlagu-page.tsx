@@ -1072,10 +1072,10 @@ ${businessName.trim()}`
             className="bg-white rounded-xl p-6 w-full max-w-md"
           >
             <h3 className="text-lg font-bold text-gray-900 mb-4 text-center">
-              Sebelum lanjut ke WhatsApp
+              Sekali buat lagu, seumur hidup dikenal pelanggan.
             </h3>
             <p className="text-sm text-gray-600 mb-4 text-center">
-              Masukkan nama usaha Anda agar kami bisa memberikan pelayanan yang lebih personal
+              Masukkan data Anda, dan dapatkan jingle yang jadi aset branding permanen untuk usaha Anda.
             </p>
             
             <div className="mb-4">
