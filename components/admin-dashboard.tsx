@@ -258,10 +258,12 @@ Kalau setuju, boleh langsung kirim detail usaha Kakak (nama usaha + jenis usaha)
     switch (status) {
       case 'new':
         return 'bg-blue-100 text-blue-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'completed':
-        return 'bg-green-100 text-green-800';
+      case 'followup':
+        return 'bg-orange-100 text-orange-800';
+      case 'membuat_lirik':
+        return 'bg-purple-100 text-purple-800';
+      case 'cancel':
+        return 'bg-red-100 text-red-800';
       case 'closed':
         return 'bg-gray-100 text-gray-800';
       default:
@@ -417,8 +419,9 @@ Kalau setuju, boleh langsung kirim detail usaha Kakak (nama usaha + jenis usaha)
                 >
                   <option value="all">All Status</option>
                   <option value="new">New</option>
-                  <option value="pending">Pending</option>
-                  <option value="completed">Completed</option>
+                  <option value="followup">Followup</option>
+                  <option value="membuat_lirik">Membuat Lirik</option>
+                  <option value="cancel">Cancel</option>
                   <option value="closed">Closed</option>
                 </select>
               </div>
@@ -529,39 +532,30 @@ Kalau setuju, boleh langsung kirim detail usaha Kakak (nama usaha + jenis usaha)
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(lead.status)}`}>
-                        {lead.status}
-                      </span>
+                      <select
+                        value={lead.status}
+                        onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
+                        className={`text-xs font-semibold rounded-full px-2 py-1 border-0 ${getStatusColor(lead.status)}`}
+                      >
+                        <option value="new">New</option>
+                        <option value="followup">Followup</option>
+                        <option value="membuat_lirik">Membuat Lirik</option>
+                        <option value="cancel">Cancel</option>
+                        <option value="closed">Closed</option>
+                      </select>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatDate(lead.created_at)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-2">
-                        {lead.status === 'new' && (
-                          <button
-                            onClick={() => updateLeadStatus(lead.id, 'pending')}
-                            className="text-yellow-600 hover:text-yellow-900"
-                          >
-                            Mark Pending
-                          </button>
-                        )}
-                        {lead.status === 'pending' && (
-                          <button
-                            onClick={() => updateLeadStatus(lead.id, 'completed')}
-                            className="text-green-600 hover:text-green-900"
-                          >
-                            Mark Completed
-                          </button>
-                        )}
-                        {lead.status === 'completed' && (
-                          <button
-                            onClick={() => updateLeadStatus(lead.id, 'closed')}
-                            className="text-gray-600 hover:text-gray-900"
-                          >
-                            Close
-                          </button>
-                        )}
+                        <button
+                          onClick={() => openWhatsApp(lead.phone_number)}
+                          className="text-green-600 hover:text-green-900"
+                          title="Send WhatsApp follow-up"
+                        >
+                          WhatsApp
+                        </button>
                       </div>
                     </td>
                   </tr>

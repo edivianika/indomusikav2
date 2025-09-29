@@ -46,10 +46,10 @@ export async function GET() {
       new Date(lead.created_at) >= monthAgo
     ).length;
     const pendingLeads = transformedLeads.filter(lead => 
-      lead.status === 'new' || lead.status === 'pending'
+      lead.status === 'new' || lead.status === 'followup' || lead.status === 'membuat_lirik'
     ).length;
     const completedLeads = transformedLeads.filter(lead => 
-      lead.status === 'completed' || lead.status === 'closed'
+      lead.status === 'closed'
     ).length;
 
     const stats = {
