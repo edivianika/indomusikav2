@@ -5,6 +5,7 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev",
+    "dev:clear": "node scripts/clear-cache.js && next dev",
     "lint": "next lint",
     "start": "next start",
     "analyze": "ANALYZE=true next build",
@@ -13,7 +14,8 @@
     "perf": "npm run build && npm run lighthouse",
     "optimize:images": "node scripts/optimize-images.js",
     "optimize:all": "npm run optimize:images && npm run build:analyze",
-    "prebuild": "npm run optimize:images"
+    "prebuild": "npm run optimize:images",
+    "clear:cache": "node scripts/clear-cache.js"
   },
   "dependencies": {
     "@emotion/is-prop-valid": "latest",

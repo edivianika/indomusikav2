@@ -22,6 +22,15 @@ self.addEventListener('install', (event) => {
   self.skipWaiting()
 })
 
+// Force update in development
+if (self.location.hostname === 'localhost' || self.location.hostname === '127.0.0.1') {
+  self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+      self.skipWaiting()
+    }
+  })
+}
+
 // Activate event
 self.addEventListener('activate', (event) => {
   event.waitUntil(
@@ -45,6 +54,17 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event
   const url = new URL(request.url)
+
+  // Skip caching in development
+  if (self.location.hostname === 'localhost' || self.location.hostname === '127.0.0.1') {
+    // Add cache busting for development
+    if (url.pathname.endsWith('.js') || url.pathname.endsWith('.css') || url.pathname.endsWith('.html')) {
+      const cacheBustingUrl = new URL(url)
+      cacheBustingUrl.searchParams.set('v', Date.now().toString())
+      event.respondWith(fetch(cacheBustingUrl))
+      return
+    }
+  }
 
   // Cache strategy untuk audio files
   if (request.destination === 'audio' || url.pathname.match(/\.(mp3|wav|m4a|ogg)$/)) {

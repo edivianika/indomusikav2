@@ -19,6 +19,17 @@ export const PWAProvider = ({ children }: { children: React.ReactNode }) => {
       navigator.serviceWorker.addEventListener('controllerchange', () => {
         window.location.reload()
       })
+
+      // Check for updates every 30 seconds in development
+      if (process.env.NODE_ENV === 'development') {
+        setInterval(() => {
+          navigator.serviceWorker.getRegistration().then((registration) => {
+            if (registration) {
+              registration.update()
+            }
+          })
+        }, 30000) // 30 seconds
+      }
     }
   }, [])
 
