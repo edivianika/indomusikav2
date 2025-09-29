@@ -241,6 +241,19 @@ export default function JasaBuatLaguPage() {
       return;
     }
 
+    // Validasi nomor WhatsApp
+    const cleanPhone = phoneNumber.replace(/\D/g, ''); // Hapus semua karakter non-digit
+    if (cleanPhone.length < 10 || cleanPhone.length > 15) {
+      alert('Nomor WhatsApp harus 10-15 digit');
+      return;
+    }
+
+    // Validasi format nomor Indonesia (dimulai dengan 08 atau 62)
+    if (!cleanPhone.match(/^(08|62)/)) {
+      alert('Nomor WhatsApp harus dimulai dengan 08 atau 62');
+      return;
+    }
+
     setIsSubmitting(true);
     
         try {
@@ -258,7 +271,7 @@ export default function JasaBuatLaguPage() {
           .insert([
             {
               business_name: businessName.trim(),
-              phone_number: phoneNumber.trim(),
+              phone_number: cleanPhone,
               created_at: new Date().toISOString(),
               status: 'new',
               cs_id: csId
@@ -281,9 +294,9 @@ export default function JasaBuatLaguPage() {
       
       // Track server-side events with phone number
       try {
-        await trackLeadServer(businessName.trim(), 'jasabuatlagu_page', undefined, phoneNumber.trim());
-        await trackWhatsAppContactServer(businessName.trim(), csName, undefined, phoneNumber.trim());
-        await trackAddToCartServer(businessName.trim(), 'Paket Jingle UMKM', 199000, 'IDR', undefined, phoneNumber.trim());
+        await trackLeadServer(businessName.trim(), 'jasabuatlagu_page', undefined, cleanPhone);
+        await trackWhatsAppContactServer(businessName.trim(), csName, undefined, cleanPhone);
+        await trackAddToCartServer(businessName.trim(), 'Paket Jingle UMKM', 199000, 'IDR', undefined, cleanPhone);
       } catch (serverError) {
         console.warn('Server-side tracking failed:', serverError);
         // Continue with client-side tracking only
@@ -316,9 +329,9 @@ ${businessName.trim()}`
       
       // Track server-side events with phone number for fallback
       try {
-        await trackLeadServer(businessName.trim(), 'jasabuatlagu_page', undefined, phoneNumber.trim());
-        await trackWhatsAppContactServer(businessName.trim(), csName, undefined, phoneNumber.trim());
-        await trackAddToCartServer(businessName.trim(), 'Paket Jingle UMKM', 199000, 'IDR', undefined, phoneNumber.trim());
+        await trackLeadServer(businessName.trim(), 'jasabuatlagu_page', undefined, cleanPhone);
+        await trackWhatsAppContactServer(businessName.trim(), csName, undefined, cleanPhone);
+        await trackAddToCartServer(businessName.trim(), 'Paket Jingle UMKM', 199000, 'IDR', undefined, cleanPhone);
       } catch (serverError) {
         console.warn('Server-side tracking failed in fallback:', serverError);
         // Continue with client-side tracking only
@@ -1045,7 +1058,7 @@ ${businessName.trim()}`
             
             <div className="mb-4">
               <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                No WA
+                No WhatsApp
               </label>
               <input
                 type="tel"
@@ -1055,6 +1068,8 @@ ${businessName.trim()}`
                 placeholder="Contoh: 081234567890"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 disabled={isSubmitting}
+                pattern="[0-9]{10,15}"
+                title="Masukkan nomor WhatsApp yang valid (10-15 digit)"
               />
             </div>
             

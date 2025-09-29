@@ -10,26 +10,15 @@ async function testRealtimeNotifications() {
   try {
     console.log('🧪 Testing real-time notifications...');
     
-    // First, get a random CS
-    const { data: customerServices } = await supabase
-      .from('customer_services')
-      .select('*')
-      .eq('status', true)
-      .limit(1);
-    
-    if (!customerServices || customerServices.length === 0) {
-      console.error('❌ No customer services found');
-      return;
-    }
-    
-    const cs = customerServices[0];
-    console.log(`📋 Using CS: ${cs.name} (ID: ${cs.id})`);
+    // Use CS ID 1 (Ridha) for testing
+    const csId = 1;
+    console.log(`📋 Using CS ID: ${csId}`);
     
     // Insert a new test lead
     const testLead = {
       business_name: `Test Business ${Date.now()}`,
       phone_number: `0812${Math.floor(Math.random() * 100000000).toString().padStart(8, '0')}`,
-      cs_id: cs.id,
+      cs_id: csId,
       status: 'new'
     };
     
