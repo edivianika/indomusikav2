@@ -104,10 +104,58 @@ export default function AdminDashboard() {
 
   // Open WhatsApp
   const openWhatsApp = (phoneNumber: string) => {
-    const cleanNumber = phoneNumber.replace(/[^\d]/g, '');
+    console.log('📱 Original phone number:', phoneNumber);
     
-    // Add country code if not present
-    const whatsappNumber = cleanNumber.startsWith('62') ? cleanNumber : `62${cleanNumber}`;
+    // Clean the number - remove all non-digit characters
+    const cleanNumber = phoneNumber.replace(/[^\d]/g, '');
+    console.log('🧹 Cleaned number:', cleanNumber);
+    
+    let whatsappNumber;
+    
+    // Handle different Indonesian phone number formats
+    if (cleanNumber.startsWith('08')) {
+      // Format: 08xxxxxxxxx -> 628xxxxxxxxx
+      whatsappNumber = '62' + cleanNumber.substring(1);
+    } else if (cleanNumber.startsWith('8')) {
+      // Format: 8xxxxxxxxx -> 628xxxxxxxxx
+      whatsappNumber = '62' + cleanNumber;
+    } else if (cleanNumber.startsWith('62')) {
+      // Check if it's properly formatted (62xxxxxxxxx)
+      if (cleanNumber.length >= 11 && cleanNumber.length <= 15) {
+        // Already properly formatted
+        whatsappNumber = cleanNumber;
+      } else {
+        // Handle malformed numbers like 62085264693348
+        // Remove the first 62 and process the rest
+        const withoutFirst62 = cleanNumber.substring(2);
+        if (withoutFirst62.startsWith('08')) {
+          whatsappNumber = '62' + withoutFirst62.substring(1);
+        } else if (withoutFirst62.startsWith('8')) {
+          whatsappNumber = '62' + withoutFirst62;
+        } else {
+          whatsappNumber = '62' + withoutFirst62;
+        }
+      }
+    } else {
+      // Default: add 62 prefix
+      whatsappNumber = '62' + cleanNumber;
+    }
+    
+    // Final validation: ensure we don't have duplicate 62
+    if (whatsappNumber.startsWith('6262')) {
+      whatsappNumber = whatsappNumber.substring(2);
+    }
+    
+    // Additional check: if we still have malformed number, try to fix it
+    if (whatsappNumber.length > 15) {
+      // If too long, try to extract the correct part
+      const match = whatsappNumber.match(/^62(\d{9,13})/);
+      if (match) {
+        whatsappNumber = '62' + match[1];
+      }
+    }
+    
+    console.log('✅ Final WhatsApp number:', whatsappNumber);
     
     // Follow-up message for admin
     const followUpMessage = encodeURIComponent(`Halo Kak 👋
@@ -116,7 +164,10 @@ Apakah Kakak ingin lanjutkan pemesanan jinglenya? 😊
 
 Kami siap membantu membuat jingle yang sesuai dengan kebutuhan bisnis Kakak!`);
 
-    window.open(`https://wa.me/${whatsappNumber}?text=${followUpMessage}`, '_blank');
+    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${followUpMessage}`;
+    console.log('🔗 WhatsApp URL:', whatsappUrl);
+    
+    window.open(whatsappUrl, '_blank');
   };
 
   // Update lead status
