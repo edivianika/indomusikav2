@@ -35,6 +35,7 @@ export default function JasaBuatLaguPage() {
   const [businessName, setBusinessName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [phoneError, setPhoneError] = useState('');
   const [customerServices, setCustomerServices] = useState<any[]>([]);
   const [currentCSIndex, setCurrentCSIndex] = useState(0);
 
@@ -228,6 +229,45 @@ export default function JasaBuatLaguPage() {
   const handleWhatsAppClick = () => {
     trackButtonClick('WhatsApp CTA', 'Hero Section');
     setShowPopup(true);
+    setPhoneError(''); // Reset error when opening popup
+  };
+
+  // Validasi nomor WhatsApp yang lebih ketat
+  const validatePhoneNumber = (phone: string) => {
+    const cleanPhone = phone.replace(/\D/g, ''); // Hapus semua karakter non-digit
+    
+    // Cek panjang nomor
+    if (cleanPhone.length < 10 || cleanPhone.length > 15) {
+      return 'Nomor WhatsApp harus 10-15 digit';
+    }
+
+    // Cek format nomor Indonesia
+    if (!cleanPhone.match(/^(08|62)/)) {
+      return 'Nomor harus dimulai dengan 08 atau 62';
+    }
+
+    // Cek nomor yang tidak valid (contoh: semua angka sama)
+    if (/^(\d)\1{9,}$/.test(cleanPhone)) {
+      return 'Nomor tidak valid';
+    }
+
+    // Cek nomor yang terlalu pendek setelah 08
+    if (cleanPhone.startsWith('08') && cleanPhone.length < 11) {
+      return 'Nomor WhatsApp tidak lengkap';
+    }
+
+    return '';
+  };
+
+  // Handle perubahan nomor telepon dengan validasi real-time
+  const handlePhoneChange = (value: string) => {
+    setPhoneNumber(value);
+    if (value.trim()) {
+      const error = validatePhoneNumber(value);
+      setPhoneError(error);
+    } else {
+      setPhoneError('');
+    }
   };
 
   const handleSubmitBusinessName = async () => {
@@ -241,18 +281,15 @@ export default function JasaBuatLaguPage() {
       return;
     }
 
-    // Validasi nomor WhatsApp
-    const cleanPhone = phoneNumber.replace(/\D/g, ''); // Hapus semua karakter non-digit
-    if (cleanPhone.length < 10 || cleanPhone.length > 15) {
-      alert('Nomor WhatsApp harus 10-15 digit');
+    // Validasi nomor WhatsApp dengan fungsi yang lebih ketat
+    const phoneValidationError = validatePhoneNumber(phoneNumber);
+    if (phoneValidationError) {
+      setPhoneError(phoneValidationError);
+      alert(phoneValidationError);
       return;
     }
 
-    // Validasi format nomor Indonesia (dimulai dengan 08 atau 62)
-    if (!cleanPhone.match(/^(08|62)/)) {
-      alert('Nomor WhatsApp harus dimulai dengan 08 atau 62');
-      return;
-    }
+    const cleanPhone = phoneNumber.replace(/\D/g, ''); // Hapus semua karakter non-digit
 
     setIsSubmitting(true);
     
@@ -1041,6 +1078,23 @@ ${businessName.trim()}`
               Masukkan nama usaha Anda agar kami bisa memberikan pelayanan yang lebih personal
             </p>
             
+            {/* Warning Box */}
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <span className="text-yellow-600 text-lg">⚠️</span>
+                </div>
+                <div className="ml-2">
+                  <p className="text-sm text-yellow-800 font-medium">
+                    Perhatian: Pastikan nomor WhatsApp yang Anda masukkan benar dan aktif!
+                  </p>
+                  <p className="text-xs text-yellow-700 mt-1">
+                    Nomor yang salah akan menghambat proses komunikasi dengan tim kami.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
             <div className="mb-4">
               <label htmlFor="businessName" className="block text-sm font-medium text-gray-700 mb-2">
                 Nama
@@ -1058,19 +1112,32 @@ ${businessName.trim()}`
             
             <div className="mb-4">
               <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                No WhatsApp
+                No WhatsApp <span className="text-red-500">*</span>
               </label>
               <input
                 type="tel"
                 id="phoneNumber"
                 value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
+                onChange={(e) => handlePhoneChange(e.target.value)}
                 placeholder="Contoh: 081234567890"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent ${
+                  phoneError 
+                    ? 'border-red-500 focus:ring-red-500' 
+                    : 'border-gray-300 focus:ring-green-500'
+                }`}
                 disabled={isSubmitting}
                 pattern="[0-9]{10,15}"
-                title="Masukkan nomor WhatsApp yang valid (10-15 digit)"
+                title="Masukkan nomor WhatsApp yang valid (10-15 digit, dimulai dengan 08 atau 62)"
               />
+              {phoneError && (
+                <p className="text-red-500 text-xs mt-1 flex items-center">
+                  <span className="mr-1">⚠️</span>
+                  {phoneError}
+                </p>
+              )}
+              <p className="text-xs text-gray-500 mt-1">
+                <strong>Penting:</strong> Pastikan nomor WhatsApp aktif dan dapat dihubungi
+              </p>
             </div>
             
             <div className="flex space-x-3">
@@ -1079,6 +1146,7 @@ ${businessName.trim()}`
                   setShowPopup(false);
                   setBusinessName('');
                   setPhoneNumber('');
+                  setPhoneError('');
                 }}
                 className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                 disabled={isSubmitting}
@@ -1087,7 +1155,7 @@ ${businessName.trim()}`
               </button>
               <button
                 onClick={handleSubmitBusinessName}
-                disabled={isSubmitting}
+                disabled={isSubmitting || !!phoneError || !phoneNumber.trim()}
                 className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? 'Menyimpan...' : 'Lanjut ke WhatsApp'}
