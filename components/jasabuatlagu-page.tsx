@@ -43,11 +43,6 @@ export default function JasaBuatLaguPage() {
   const [duration, setDuration] = useState(0);
   const [isPlayerPlaying, setIsPlayerPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
-  const [showPopup, setShowPopup] = useState(false);
-  const [businessName, setBusinessName] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [phoneError, setPhoneError] = useState('');
   const [customerServices, setCustomerServices] = useState<any[]>([]);
   const [currentCSIndex, setCurrentCSIndex] = useState(0);
 
@@ -238,194 +233,57 @@ export default function JasaBuatLaguPage() {
     }
   };
 
-  const handleWhatsAppClick = () => {
-    trackButtonClick('WhatsApp CTA', 'Hero Section');
-    setShowPopup(true);
-    setPhoneError(''); // Reset error when opening popup
-  };
-
-  // Validasi nomor WhatsApp yang lebih ketat
-  const validatePhoneNumber = (phone: string) => {
-    const cleanPhone = phone.replace(/\D/g, ''); // Hapus semua karakter non-digit
+  const handleWhatsAppClick = async () => {
+    // Track button click
+    trackButtonClick('WhatsApp CTA', 'jasabuatlagu_page');
     
-    // Cek panjang nomor
-    if (cleanPhone.length < 10 || cleanPhone.length > 15) {
-      return 'Nomor WhatsApp harus 10-15 digit';
-    }
+    try {
+      // Get next customer service for rotation
+      const currentCS = await getNextCustomerService();
+      const csPhone = currentCS?.nohp || '6289524955768'; // Fallback to Ridha's number
+      const csName = currentCS?.nama || 'Customer Service';
+      const csId = currentCS?.id || 1; // Fallback to Ridha's ID
 
-    // Cek format nomor Indonesia
-    if (!cleanPhone.match(/^(08|62)/)) {
-      return 'Nomor harus dimulai dengan 08 atau 62';
-    }
-
-    // Cek nomor yang tidak valid (contoh: semua angka sama)
-    if (/^(\d)\1{9,}$/.test(cleanPhone)) {
-      return 'Nomor tidak valid';
-    }
-
-    // Cek nomor yang terlalu pendek setelah 08
-    if (cleanPhone.startsWith('08') && cleanPhone.length < 11) {
-      return 'Nomor WhatsApp tidak lengkap';
-    }
-
-    return '';
-  };
-
-  // Handle perubahan nomor telepon dengan validasi real-time
-  const handlePhoneChange = (value: string) => {
-    setPhoneNumber(value);
-    if (value.trim()) {
-      const error = validatePhoneNumber(value);
-      setPhoneError(error);
-    } else {
-      setPhoneError('');
-    }
-  };
-
-  const handleSubmitBusinessName = async () => {
-    if (!businessName.trim()) {
-      alert('Mohon masukkan nama Anda');
-      return;
-    }
-    
-    if (!phoneNumber.trim()) {
-      alert('Mohon masukkan nomor WhatsApp Anda');
-      return;
-    }
-
-    // Validasi nomor WhatsApp dengan fungsi yang lebih ketat
-    const phoneValidationError = validatePhoneNumber(phoneNumber);
-    if (phoneValidationError) {
-      setPhoneError(phoneValidationError);
-      alert(phoneValidationError);
-      return;
-    }
-
-    const cleanPhone = phoneNumber.replace(/\D/g, ''); // Hapus semua karakter non-digit
-
-    setIsSubmitting(true);
-    
-        try {
-          // Get next customer service for rotation
-          const currentCS = await getNextCustomerService();
-          const csPhone = currentCS?.nohp || '6289524955768'; // Fallback to Ridha's number
-          const csName = currentCS?.nama || 'Customer Service';
-          const csId = currentCS?.id || 1; // Fallback to Ridha's ID
-
-      // Try to save to database, but don't block if it fails
-      try {
-        const supabase = createClient();
-        const { error } = await supabase
-          .from('business_inquiries')
-          .insert([
-            {
-              business_name: businessName.trim(),
-              phone_number: cleanPhone,
-              created_at: new Date().toISOString(),
-              status: 'new',
-              cs_id: csId
-            }
-          ]);
-
-        if (error) {
-          console.warn('Database save failed, but continuing with WhatsApp redirect:', error);
-          // Continue with WhatsApp redirect even if database save fails
-        }
-      } catch (dbError) {
-        console.warn('Database connection failed, but continuing with WhatsApp redirect:', dbError);
-        // Continue with WhatsApp redirect even if database fails
-      }
-
-      // Track lead, WhatsApp click, and Add to Cart (Client-side)
-      trackLead(businessName.trim(), 'jasabuatlagu_page');
-      trackWhatsAppClick(businessName.trim(), csName);
-      trackAddToCart(businessName.trim(), 'Paket Jingle UMKM', 199000, 'IDR');
+      // Track Facebook Pixel events (without user data since no form)
+      const leadSource = 'jasabuatlagu_page';
+      trackLead('Visitor', leadSource);
+      trackWhatsAppClick('Visitor', csName);
+      trackAddToCart('Visitor', 'Paket Jingle UMKM', 199000, 'IDR');
       
-      // Track server-side events with phone number
+      // Track server-side events
       try {
-        await trackLeadServer(businessName.trim(), 'jasabuatlagu_page', undefined, cleanPhone);
-        await trackWhatsAppContactServer(businessName.trim(), csName, undefined, cleanPhone);
-        await trackAddToCartServer(businessName.trim(), 'Paket Jingle UMKM', 199000, 'IDR', undefined, cleanPhone);
+        await trackLeadServer('Visitor', leadSource);
+        await trackWhatsAppContactServer('Visitor', csName);
+        await trackAddToCartServer('Visitor', 'Paket Jingle UMKM', 199000, 'IDR');
       } catch (serverError) {
         console.warn('Server-side tracking failed:', serverError);
         // Continue with client-side tracking only
       }
       
-      // Always redirect to WhatsApp regardless of database status
+      // Short WhatsApp message
       const message = encodeURIComponent(
-        `Halo ${csName}! 👋
-
-Saya tertarik untuk order jingle original dari Indomusika! 🎵
-
-Saya ingin membuat jingle untuk bisnis saya agar pelanggan lebih mudah mengingat brand saya.
-
-Bisa saya dapatkan info detail tentang:
-✨ Paket 2 Lagu Original Rp199K
-✨ Proses pembuatan
-✨ Timeline pengerjaan
-
-Siap untuk mulai order! 🚀
-
-Nama: ${businessName.trim()}
-No WhatsApp: ${cleanPhone}
-
-Terima kasih! 🙏`
+        `Halo ${csName}! 👋\n\nSaya tertarik order jingle original dari Indomusika.\n\nBisa info detail paket 2 lagu Rp199K? 🎵`
       );
+      
+      // Redirect directly to WhatsApp
       window.location.href = `https://wa.me/${csPhone}?text=${message}`;
       
-      // Close popup
-      setShowPopup(false);
-      setBusinessName('');
-      setPhoneNumber('');
+    } catch (error) {
+      console.error('Error redirecting to WhatsApp:', error);
+      // Fallback: redirect to default CS
+      const fallbackPhone = '6289524955768';
+      const fallbackName = 'Customer Service';
       
-        } catch (error) {
-          console.error('Unexpected error:', error);
-          // Even if there's an unexpected error, still try to redirect to WhatsApp
-          const currentCS = await getNextCustomerService();
-          const csPhone = currentCS?.nohp || '6289524955768'; // Fallback to Ridha's number
-          const csName = currentCS?.nama || 'Customer Service';
-      
-      // Track lead, WhatsApp click, and Add to Cart for fallback (Client-side)
-      trackLead(businessName.trim(), 'jasabuatlagu_page');
-      trackWhatsAppClick(businessName.trim(), csName);
-      trackAddToCart(businessName.trim(), 'Paket Jingle UMKM', 199000, 'IDR');
-      
-      // Track server-side events with phone number for fallback
-      try {
-        await trackLeadServer(businessName.trim(), 'jasabuatlagu_page', undefined, cleanPhone);
-        await trackWhatsAppContactServer(businessName.trim(), csName, undefined, cleanPhone);
-        await trackAddToCartServer(businessName.trim(), 'Paket Jingle UMKM', 199000, 'IDR', undefined, cleanPhone);
-      } catch (serverError) {
-        console.warn('Server-side tracking failed in fallback:', serverError);
-        // Continue with client-side tracking only
-      }
+      // Track events even on error
+      trackLead('Visitor', 'jasabuatlagu_page');
+      trackWhatsAppClick('Visitor', fallbackName);
+      trackAddToCart('Visitor', 'Paket Jingle UMKM', 199000, 'IDR');
       
       const message = encodeURIComponent(
-        `Halo ${csName}! 👋
-
-Saya tertarik untuk order jingle original dari Indomusika! 🎵
-
-Saya ingin membuat jingle untuk bisnis saya agar pelanggan lebih mudah mengingat brand saya.
-
-Bisa saya dapatkan info detail tentang:
-✨ Paket 2 Lagu Original Rp199K
-✨ Proses pembuatan
-✨ Timeline pengerjaan
-
-Siap untuk mulai order! 🚀
-
-Nama: ${businessName.trim()}
-No WhatsApp: ${cleanPhone}
-
-Terima kasih! 🙏`
+        `Halo ${fallbackName}! 👋\n\nSaya tertarik order jingle original dari Indomusika.\n\nBisa info detail paket 2 lagu Rp199K? 🎵`
       );
-      window.location.href = `https://wa.me/${csPhone}?text=${message}`;
       
-      setShowPopup(false);
-      setBusinessName('');
-      setPhoneNumber('');
-    } finally {
-      setIsSubmitting(false);
+      window.location.href = `https://wa.me/${fallbackPhone}?text=${message}`;
     }
   };
 
@@ -1102,92 +960,6 @@ Terima kasih! 🙏`
         </div>
       </footer>
 
-      {/* Business Name Popup */}
-      {showPopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="bg-white rounded-xl p-6 w-full max-w-md"
-          >
-            <h3 className="text-lg font-bold text-gray-900 mb-4 text-center">
-              Sekali buat lagu, seumur hidup dikenal pelanggan.
-            </h3>
-            <p className="text-sm text-gray-600 mb-4 text-center">
-              Masukkan data Anda, dan dapatkan jingle yang jadi aset branding permanen untuk usaha Anda.
-            </p>
-            
-            <div className="mb-4">
-              <label htmlFor="businessName" className="block text-sm font-medium text-gray-700 mb-2">
-                Nama
-              </label>
-              <input
-                type="text"
-                id="businessName"
-                value={businessName}
-                onChange={(e) => setBusinessName(e.target.value)}
-                placeholder="Contoh: Warung Makan Sederhana"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                disabled={isSubmitting}
-              />
-            </div>
-            
-            <div className="mb-4">
-              <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                No WhatsApp <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="tel"
-                id="phoneNumber"
-                value={phoneNumber}
-                onChange={(e) => handlePhoneChange(e.target.value)}
-                placeholder="Contoh: 081234567890"
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent ${
-                  phoneError 
-                    ? 'border-red-500 focus:ring-red-500' 
-                    : 'border-gray-300 focus:ring-green-500'
-                }`}
-                disabled={isSubmitting}
-                pattern="[0-9]{10,15}"
-                title="Masukkan nomor WhatsApp yang valid (10-15 digit, dimulai dengan 08 atau 62)"
-              />
-              {phoneError && (
-                <p className="text-red-500 text-xs mt-1 flex items-center">
-                  <span className="mr-1">⚠️</span>
-                  {phoneError}
-                </p>
-              )}
-              <p className="text-xs text-gray-500 mt-1">
-                <strong>Penting:</strong> Pastikan nomor WhatsApp aktif dan dapat dihubungi
-              </p>
-            </div>
-            
-            <div className="flex space-x-3">
-              <button
-                onClick={() => {
-                  setShowPopup(false);
-                  setBusinessName('');
-                  setPhoneNumber('');
-                  setPhoneError('');
-                }}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                disabled={isSubmitting}
-              >
-                Batal
-              </button>
-              <button
-                onClick={handleSubmitBusinessName}
-                disabled={isSubmitting || !!phoneError || !phoneNumber.trim()}
-                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-              >
-                <WhatsAppIcon className="w-4 h-4 flex-shrink-0" />
-                <span>{isSubmitting ? 'Menyimpan...' : 'Lanjut ke WhatsApp'}</span>
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
     </div>
   );
 }
