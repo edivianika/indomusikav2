@@ -564,19 +564,30 @@ export default function JasaBuatLaguPage() {
             transition={{ duration: 0.6 }}
           >
             {/* Hook Headline */}
-            <div className="mb-6 sm:mb-8">
-              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight mb-4">
-                <span className="block">Bisnis sepi? <br /> Jangan cuma promo.</span>
-                <span className="block text-green-600 mt-2">Biar usaha kamu <u>ingat lewat lagu!</u></span>
+            <div className="mb-8 sm:mb-10">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight mb-6">
+                <span className="block mb-2">
+                  Bisnismu sepi padahal udah sering promo?
+                </span>
+                <span className="block">
+                  Saatnya bikin pelanggan ingat usahamu lewat lagu! 🎶
+                </span>
               </h1>
-            </div>
-
-            {/* CTA Banner */}
-            <div className="mb-6 sm:mb-8">
-              <div className="bg-gray-100 rounded-lg px-4 py-3 sm:px-6 sm:py-4 inline-block">
-                <p className="text-sm sm:text-base font-semibold text-gray-900">
-                  Pesan Jingle Rp199K - Bayar Setelah Jadi
-                </p>
+              
+              {/* Offer Banner */}
+              <div className="bg-gradient-to-r from-green-50 to-green-100 border-2 border-green-300 rounded-xl px-5 py-4 sm:px-8 sm:py-5 max-w-2xl mx-auto shadow-md hover:shadow-lg transition-shadow">
+                <div className="flex items-start sm:items-center space-x-3 sm:space-x-4">
+                  <span className="text-3xl sm:text-4xl flex-shrink-0">🎧</span>
+                  <div className="flex-1">
+                    <p className="text-base sm:text-lg md:text-xl font-bold text-gray-900 leading-tight">
+                      Pesan jingle mulai{' '}
+                      <span className="text-green-600 text-2xl sm:text-3xl md:text-4xl font-extrabold">Rp199K</span>
+                    </p>
+                    <p className="text-sm sm:text-base text-gray-700 mt-2 leading-relaxed">
+                      Bayar setelah jadi, puas dulu baru bayar
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
